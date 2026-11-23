@@ -381,7 +381,7 @@
   // ============================================================
   var SET_LAB = [['NAMA_INSTANSI', 'Nama instansi'], ['NAMA_LAYANAN', 'Nama layanan'], ['NOMINAL_PNBP', 'Nominal PNBP (Rp)'], ['BANK_NAMA', 'Nama bank'], ['BANK_NOREK', 'Nomor rekening'], ['BANK_ATAS_NAMA', 'Atas nama rekening'], ['CATATAN_PENTING', 'Catatan penting (beranda)'], ['KONTAK_ALAMAT', 'Alamat'], ['KONTAK_TELEPON', 'Telepon'], ['KONTAK_EMAIL', 'Email kontak'], ['JAM_LAYANAN', 'Jam layanan'], ['URL_PORTAL', 'URL portal pemohon (untuk tautan di email)'], ['EMAIL_AKTIF', 'Kirim email notifikasi (Ya/Tidak)']];
   function vAdmin() {
-    var tabs = [['petugas', 'Petugas'], ['log', 'Log Aktivitas'], ['setelan', 'Pengaturan']];
+    var tabs = [['petugas', 'Petugas'], ['wa', 'Notifikasi WA'], ['log', 'Log Aktivitas'], ['setelan', 'Pengaturan']];
     $('#v').innerHTML = '<div class="tabs" role="tablist">' + tabs.map(function (t) { return '<button role="tab" class="' + (O.tab === t[0] ? 'on' : '') + '" data-act="tab" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div><div id="adm"></div>';
     muatTab();
   }
@@ -395,6 +395,10 @@
         if (O.tab !== tab || !$('#adm')) return;
         el.innerHTML = '<div class="stack"><div class="row between"><p class="muted small">Hanya akun Google yang terdaftar dan aktif di sini yang dapat masuk.</p><button class="btn btn-p btn-s" data-act="petugasBaru">' + ic('person_add') + 'Tambah Petugas</button></div><div class="tbl-wrap"><div class="tbl-scroll"><table class="t stack"><thead><tr><th>Email</th><th>Nama</th><th>Peran</th><th>Aktif</th><th></th></tr></thead><tbody>' +
           r.rows.map(function (p) { return '<tr><td data-l="Email">' + esc(p.email) + '</td><td data-l="Nama">' + esc(p.nama) + '</td><td data-l="Peran"><span class="pill ' + (p.peran === 'Admin' ? 'gold' : '') + '">' + esc(p.peran) + '</span></td><td data-l="Aktif">' + (p.aktif === 'Ya' ? '<span class="pill ok">Aktif</span>' : '<span class="pill gray">Nonaktif</span>') + '</td><td data-l="Aksi" style="text-align:right"><button class="btn btn-o btn-s" data-act="petugasUbah" data-e="' + esc(p.email) + '" data-n="' + esc(p.nama) + '" data-p="' + esc(p.peran) + '" data-a="' + esc(p.aktif) + '">Ubah</button></td></tr>'; }).join('') + '</tbody></table></div></div></div>';
+      } else if (tab === 'wa') {
+        var w = await api('adm.waStatus'), q = await api('adm.waAntrean');
+        if (O.tab !== tab || !$('#adm')) return;
+        renderWa(w, q.rows);
       } else if (tab === 'log') {
         var l = await api('adm.log', { batas: 200 });
         if (O.tab !== tab || !$('#adm')) return;
@@ -410,6 +414,31 @@
       }
     } catch (e) { if ($('#adm')) $('#adm').innerHTML = '<div class="banner err">' + ic('error') + '<div>' + esc(e.message) + '</div></div>'; }
   }
+
+  // ---------- Notifikasi WhatsApp (Fonnte) ----------
+  function renderWa(w, rows) {
+    var el = $('#adm'); if (!el) return;
+    var kej = w.kejadian.map(function (k) {
+      return '<tr><td data-l="Kejadian">' + esc(k.label) + '</td><td data-l="Kirim WA"><select class="input" name="' + esc(k.kunci) + '" aria-label="' + esc(k.label) + '"><option value="Ya"' + (k.aktif ? ' selected' : '') + '>Ya</option><option value="Tidak"' + (k.aktif ? '' : ' selected') + '>Tidak</option></select></td></tr>';
+    }).join('');
+    var warna = function (s) { return s === 'Terkirim' ? 'ok' : s === 'Gagal' ? 'err' : 'gray'; };
+    var baris = rows.length ? rows.map(function (x) {
+      return '<tr><td data-l="Waktu" class="small muted">' + UI.tgl(x.waktu, true) + '</td><td data-l="Tujuan" class="small">' + esc(x.tujuan) + '</td><td data-l="Nama" class="small">' + esc(x.nama) + '</td><td data-l="Kejadian"><span class="chip">' + esc(x.event) + '</span></td><td data-l="ID" class="small">' + esc(x.ref) + '</td><td data-l="Status"><span class="pill ' + warna(x.status) + '">' + esc(x.status) + '</span></td><td data-l="Respon" class="small muted">' + esc(x.respon) + '</td></tr>';
+    }).join('') : '';
+    el.innerHTML = '<div class="stack">' +
+      '<div class="grid g4"><div class="card kpi ' + (w.aktif && w.tokenAda ? 'ok' : 'warn') + '"><div class="l">Status</div><div class="v" style="font-size:20px">' + (w.aktif ? (w.tokenAda ? 'Aktif' : 'Belum ada token') : 'Nonaktif') + '</div></div>' +
+      '<div class="card kpi"><div class="l">Antri</div><div class="v">' + w.antri + '</div></div><div class="card kpi ok"><div class="l">Terkirim</div><div class="v">' + w.terkirim + '</div></div><div class="card kpi err"><div class="l">Gagal</div><div class="v">' + w.gagal + '</div></div></div>' +
+      '<div class="card stack-s"><b>Token Fonnte</b><p class="small muted">Token disimpan di Script Properties server, tidak pernah ditampilkan utuh. ' + (w.tokenAda ? 'Tersimpan: <span class="mono">' + esc(w.tokenSamar) + '</span>' : 'Belum ada token tersimpan.') + '</p>' +
+      '<form data-form="waToken" class="row wrap-r"><input class="input grow" type="password" name="token" autocomplete="off" placeholder="' + (w.tokenAda ? 'Kosongkan bila tidak diubah' : 'Tempel token dari fonnte.com') + '" style="min-width:220px"><button class="btn btn-p">' + ic('save') + 'Simpan token</button>' + (w.tokenAda ? '<button type="button" class="btn btn-o" data-act="waHapusToken">Hapus token</button>' : '') + '</form></div>' +
+      '<form class="card stack-s" data-form="waSaklar"><b>Saklar notifikasi</b><label class="field"><span>Kirim notifikasi WhatsApp ke pemohon</span><select class="input" name="WA_AKTIF"><option value="Ya"' + (w.aktif ? ' selected' : '') + '>Ya, aktif</option><option value="Tidak"' + (w.aktif ? '' : ' selected') + '>Tidak, nonaktif</option></select></label>' +
+      '<div class="tbl-wrap"><div class="tbl-scroll"><table class="t stack"><thead><tr><th>Kejadian</th><th>Kirim WA</th></tr></thead><tbody>' + kej + '</tbody></table></div></div>' +
+      '<p class="small muted">Hanya nomor seluler Indonesia (08xx / +628xx) yang dikirimi. Kode Akses tidak dikirim lewat WhatsApp.</p><div class="row" style="justify-content:flex-end"><button class="btn btn-p">' + ic('save') + 'Simpan saklar</button></div></form>' +
+      '<form class="card stack-s" data-form="waTes"><b>Tes kirim</b><div class="row wrap-r"><input class="input grow" name="hp" inputmode="tel" placeholder="Nomor WhatsApp, mis. 0812xxxxxxxx" style="min-width:220px"><button class="btn btn-o">' + ic('send') + 'Kirim tes</button></div></form>' +
+      '<div class="row between wrap-r"><b>Antrean terakhir</b><div class="row"><button class="btn btn-o btn-s" data-act="waUlang">' + ic('replay') + 'Kirim ulang yang gagal</button><button class="btn btn-t btn-s" data-act="waMuat">' + ic('refresh') + 'Muat ulang</button></div></div>' +
+      (rows.length ? '<div class="tbl-wrap"><div class="tbl-scroll"><table class="t stack"><thead><tr><th>Waktu</th><th>Tujuan</th><th>Nama</th><th>Kejadian</th><th>ID</th><th>Status</th><th>Respon</th></tr></thead><tbody>' + baris + '</tbody></table></div></div>' : '<div class="empty">' + ic('chat') + 'Belum ada pesan WhatsApp.</div>') +
+      '</div>';
+  }
+
   function modalPetugas(p) {
     var m = document.createElement('div'); m.className = 'modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
     m.innerHTML = '<form class="sheet stack"><h3>' + (p ? 'Ubah petugas' : 'Tambah petugas') + '</h3>' +
@@ -430,7 +459,29 @@
     });
   }
 
+  async function submitWa(f) {
+    var btn = f.querySelector('button:not([type="button"])'), jenis = f.dataset.form;
+    UI.busy(btn, true);
+    try {
+      if (jenis === 'waToken') {
+        var t = f.token.value.trim();
+        if (!t) { UI.toast('Isi token terlebih dahulu.', 'warn'); UI.busy(btn, false); return; }
+        await api('adm.waToken', { token: t }); UI.toast('Token tersimpan.', 'ok'); muatTab(); return;
+      }
+      if (jenis === 'waSaklar') {
+        var s = {}; Array.prototype.forEach.call(f.elements, function (x) { if (x.name) s[x.name] = x.value; });
+        await api('adm.setelanSimpan', { setelan: s }); UI.toast('Saklar notifikasi tersimpan.', 'ok'); muatTab(); return;
+      }
+      if (jenis === 'waTes') {
+        await api('adm.waTes', { hp: f.hp.value }, { timeout: 60000 }); UI.toast('Pesan tes terkirim. Periksa WhatsApp.', 'ok');
+      }
+    } catch (err) { UI.toast(err.message, 'err'); }
+    UI.busy(btn, false);
+  }
+
   async function onSubmit(e) {
+    var fw = e.target.closest('form[data-form^="wa"]');
+    if (fw) { e.preventDefault(); return submitWa(fw); }
     var f = e.target.closest('form[data-form="setelan"]'); if (!f) return;
     e.preventDefault();
     var btn = f.querySelector('button'), data = {};
@@ -477,6 +528,9 @@
       UI.busy(t, false);
     }
     else if (a === 'tab') { O.tab = t.dataset.t; vAdmin(); }
+    else if (a === 'waMuat') muatTab();
+    else if (a === 'waUlang') { UI.busy(t, true); try { var u = await api('adm.waUlang'); UI.toast(u.ulang + ' pesan diantrekan ulang.', 'ok'); muatTab(); } catch (err) { UI.toast(err.message, 'err'); UI.busy(t, false); } }
+    else if (a === 'waHapusToken') { if (await UI.confirm('Hapus token Fonnte?', 'Notifikasi WhatsApp berhenti sampai token baru disimpan.', 'Hapus token', true)) { try { await api('adm.waToken', { token: '__HAPUS__' }); UI.toast('Token dihapus.', 'ok'); muatTab(); } catch (err) { UI.toast(err.message, 'err'); } } }
     else if (a === 'petugasBaru') modalPetugas(null);
     else if (a === 'petugasUbah') modalPetugas({ e: t.dataset.e, n: t.dataset.n, p: t.dataset.p, a: t.dataset.a });
   }

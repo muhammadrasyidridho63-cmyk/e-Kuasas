@@ -3,7 +3,7 @@
   var URL_ = window.GAS_URL || '';
   var inflight = {};
   var epoch = 0;
-  var READ = /^(boot|off\.list|off\.detail|adm\.petugas|adm\.log|adm\.setelan|reg\.status)$/;
+  var READ = /^(boot|off\.list|off\.detail|adm\.petugas|adm\.log|adm\.setelan|adm\.waStatus|adm\.waAntrean|reg\.status)$/;
 
   function tokenGet() { try { return sessionStorage.getItem('ek_token') || ''; } catch (e) { return ''; } }
   function tokenSet(t) { try { t ? sessionStorage.setItem('ek_token', t) : sessionStorage.removeItem('ek_token'); } catch (e) { /* abaikan */ } }

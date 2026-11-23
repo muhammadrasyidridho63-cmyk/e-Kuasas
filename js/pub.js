@@ -148,7 +148,7 @@
     return '<form class="card stack" data-form="data" novalidate><div class="row between"><h2 style="font-size:20px">Data Pemohon</h2><span class="chip">' + esc(W.kode) + '</span></div>' +
       fld('namaPemohon', 'Nama Pemberi Kuasa / Pemohon', 'text', 'Nama lengkap atau nama badan', '', 'autocomplete="name" maxlength="120"') +
       fld('namaPenerima', peneLabel, 'text', 'Nama lengkap beserta gelar', '', 'maxlength="160"') +
-      fld('kontak', 'Nomor WhatsApp / Telepon', 'tel', '08xxxxxxxxxx', 'Digunakan bila petugas perlu menghubungi Anda.', 'inputmode="tel" autocomplete="tel" maxlength="20"') +
+      fld('kontak', 'Nomor WhatsApp / Telepon', 'tel', '08xxxxxxxxxx', 'Untuk notifikasi status (WhatsApp bila diaktifkan) dan bila petugas perlu menghubungi Anda. Gunakan nomor seluler aktif.', 'inputmode="tel" autocomplete="tel" maxlength="20"') +
       fld('email', 'Alamat Email Aktif', 'email', 'nama@email.com', 'ID Registrasi dan Kode Akses akan dikirim ke email ini.', 'inputmode="email" autocomplete="email" maxlength="120"') +
       '<input class="sr" name="hp" tabindex="-1" autocomplete="off" aria-hidden="true">' +
       '<div class="wiz-act"><button type="button" class="btn btn-o" data-act="step2Balik">' + ic('arrow_back') + 'Kembali</button><span class="grow"></span><button class="btn btn-p" type="submit">Lanjut ' + ic('arrow_forward') + '</button></div></form>';
