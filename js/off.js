@@ -131,6 +131,7 @@
   function tampil() {
     if (!O.user) return;
     var r = parseRute();
+    if (r.n !== 'admin') kembalikanTema();
     O.route = r.n;
     UI.$$('.side nav a,.tabbar a').forEach(function (a) { a.classList.toggle('on', a.dataset.r === (r.n === 'detail' ? 'antrean' : r.n)); });
     $('#judul').textContent = JUDUL[r.n];
@@ -207,10 +208,22 @@
 
   var tundaQ = UI.debounce(function () { O.page = 1; renderTabel(); }, 120);
   function onInput(e) {
+    var tid = e.target.id;
+    if (O.temaPilih && /^tm[PA]h?$/.test(tid)) {
+      var v = e.target.value.trim(); if (v && v[0] !== '#') v = '#' + v;
+      if (!Tema.valid(v)) return;
+      O.temaPilih[tid.charAt(2) === 'P' ? 'p' : 'a'] = v.toUpperCase();
+      var kembar = { tmP: 'tmPh', tmPh: 'tmP', tmA: 'tmAh', tmAh: 'tmA' }[tid];
+      if ($('#' + kembar)) $('#' + kembar).value = v.toLowerCase();
+      Tema.pasang('kustom', O.temaPilih.p, O.temaPilih.a);           // pratinjau langsung tanpa render ulang
+      UI.$$('[data-act="temaBatal"],[data-act="temaSimpan"]').forEach(function (x) { x.classList.remove('off'); });
+      return;
+    }
     if (e.target.id === 'fq') { O.f.q = e.target.value; tundaQ(); }
   }
   function onChange(e) {
     var t = e.target;
+    if (O.temaPilih && /^tm[PA]h?$/.test(t.id)) { renderTema(); return; }
     if (t.id === 'fkel') { O.f.kel = t.value; O.page = 1; renderTabel(); }
     else if (t.id === 'fst') { O.f.st = t.value; O.page = 1; renderTabel(); }
     else if (t.id === 'fdari') { O.f.dari = t.value; O.page = 1; renderTabel(); }
@@ -381,7 +394,8 @@
   // ============================================================
   var SET_LAB = [['NAMA_INSTANSI', 'Nama instansi'], ['NAMA_LAYANAN', 'Nama layanan'], ['NOMINAL_PNBP', 'Nominal PNBP (Rp)'], ['BANK_NAMA', 'Nama bank'], ['BANK_NOREK', 'Nomor rekening'], ['BANK_ATAS_NAMA', 'Atas nama rekening'], ['CATATAN_PENTING', 'Catatan penting (beranda)'], ['KONTAK_ALAMAT', 'Alamat'], ['KONTAK_TELEPON', 'Telepon'], ['KONTAK_EMAIL', 'Email kontak'], ['JAM_LAYANAN', 'Jam layanan'], ['URL_PORTAL', 'URL portal pemohon (untuk tautan di email)'], ['EMAIL_AKTIF', 'Kirim email notifikasi (Ya/Tidak)']];
   function vAdmin() {
-    var tabs = [['petugas', 'Petugas'], ['wa', 'Notifikasi WA'], ['log', 'Log Aktivitas'], ['setelan', 'Pengaturan']];
+    var tabs = [['petugas', 'Petugas'], ['tema', 'Tema Warna'], ['wa', 'Notifikasi WA'], ['log', 'Log Aktivitas'], ['setelan', 'Pengaturan']];
+    kembalikanTema();
     $('#v').innerHTML = '<div class="tabs" role="tablist">' + tabs.map(function (t) { return '<button role="tab" class="' + (O.tab === t[0] ? 'on' : '') + '" data-act="tab" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div><div id="adm"></div>';
     muatTab();
   }
@@ -395,6 +409,13 @@
         if (O.tab !== tab || !$('#adm')) return;
         el.innerHTML = '<div class="stack"><div class="row between"><p class="muted small">Hanya akun Google yang terdaftar dan aktif di sini yang dapat masuk.</p><button class="btn btn-p btn-s" data-act="petugasBaru">' + ic('person_add') + 'Tambah Petugas</button></div><div class="tbl-wrap"><div class="tbl-scroll"><table class="t stack"><thead><tr><th>Email</th><th>Nama</th><th>Peran</th><th>Aktif</th><th></th></tr></thead><tbody>' +
           r.rows.map(function (p) { return '<tr><td data-l="Email">' + esc(p.email) + '</td><td data-l="Nama">' + esc(p.nama) + '</td><td data-l="Peran"><span class="pill ' + (p.peran === 'Admin' ? 'gold' : '') + '">' + esc(p.peran) + '</span></td><td data-l="Aktif">' + (p.aktif === 'Ya' ? '<span class="pill ok">Aktif</span>' : '<span class="pill gray">Nonaktif</span>') + '</td><td data-l="Aksi" style="text-align:right"><button class="btn btn-o btn-s" data-act="petugasUbah" data-e="' + esc(p.email) + '" data-n="' + esc(p.nama) + '" data-p="' + esc(p.peran) + '" data-a="' + esc(p.aktif) + '">Ubah</button></td></tr>'; }).join('') + '</tbody></table></div></div></div>';
+      } else if (tab === 'tema') {
+        var st = await api('adm.setelan');
+        if (O.tab !== tab || !$('#adm')) return;
+        var c = st.setelan || {};
+        O.temaAsli = { k: c.TEMA || 'navy-emas', p: c.TEMA_PRIMER || '', a: c.TEMA_AKSEN || '' };
+        O.temaPilih = Object.assign({}, O.temaAsli);
+        renderTema();
       } else if (tab === 'wa') {
         var w = await api('adm.waStatus'), q = await api('adm.waAntrean');
         if (O.tab !== tab || !$('#adm')) return;
@@ -438,6 +459,39 @@
       (rows.length ? '<div class="tbl-wrap"><div class="tbl-scroll"><table class="t stack"><thead><tr><th>Waktu</th><th>Tujuan</th><th>Nama</th><th>Kejadian</th><th>ID</th><th>Status</th><th>Respon</th></tr></thead><tbody>' + baris + '</tbody></table></div></div>' : '<div class="empty">' + ic('chat') + 'Belum ada pesan WhatsApp.</div>') +
       '</div>';
   }
+
+
+  // ---------- Tema warna ----------
+  function kembalikanTema() {   // keluar dari tab tanpa menyimpan: pulihkan tema tersimpan
+    if (O.temaAsli && O.temaPilih && JSON.stringify(O.temaAsli) !== JSON.stringify(O.temaPilih)) Tema.pasang(O.temaAsli.k, O.temaAsli.p, O.temaAsli.a);
+    O.temaPilih = O.temaAsli ? Object.assign({}, O.temaAsli) : null;
+  }
+  function kartuTema(kode, nama, ket, p, a) {
+    var w = Tema.turunan(p, a), on = O.temaPilih.k === kode;
+    return '<button type="button" class="tema' + (on ? ' on' : '') + '" data-act="temaPilih" data-k="' + kode + '" aria-pressed="' + on + '">' +
+      '<span class="pv" aria-hidden="true"><i style="background:' + w['--navy'] + ';border-right:3px solid ' + w['--gold'] + '"></i><span class="r"><b style="background:' + w['--navy'] + ';width:70%"></b><b style="background:' + w['--navy-m'] + '"></b><span style="background:' + w['--gold'] + '"></span></span></span>' +
+      '<span class="nm">' + esc(nama) + '<span class="dots"><i style="background:' + w['--navy'] + '"></i><i style="background:' + w['--gold'] + '"></i><i style="background:' + w['--gold-l'] + '"></i></span></span>' +
+      '<small>' + esc(ket) + '</small>' + (on ? '<span class="pill gold" style="justify-self:start">' + ic('check', 'fill') + 'Dipilih</span>' : '') + '</button>';
+  }
+  function renderTema() {
+    var el = $('#adm'); if (!el || !O.temaPilih) return;
+    var t = O.temaPilih, D = Tema.daftar;
+    var kartu = Object.keys(D).map(function (k) { return kartuTema(k, D[k].nama, D[k].ket, D[k].p, D[k].a); }).join('');
+    var kp = Tema.valid(t.p) ? t.p : '#0B2545', ka = Tema.valid(t.a) ? t.a : '#C9A227';
+    kartu += kartuTema('kustom', 'Kustom', 'Pilih sendiri warna utama dan aksen di bawah.', kp, ka);
+    var ubah = JSON.stringify(O.temaAsli) !== JSON.stringify(t);
+    el.innerHTML = '<div class="stack">' +
+      '<div class="banner info">' + ic('palette') + '<div class="small">Klik sebuah tema untuk melihat pratinjau langsung di halaman ini. Tema baru berlaku untuk <b>portal pemohon dan dashboard petugas</b> setelah <b>Simpan</b>.</div></div>' +
+      '<div class="tema-grid">' + kartu + '</div>' +
+      (t.k === 'kustom' ? '<div class="card stack-s"><b>Warna kustom</b><div class="kustom">' +
+        '<label class="field"><span>Warna utama (gelap)</span><div class="row"><input type="color" id="tmP" value="' + kp + '"><input class="input" id="tmPh" value="' + kp + '" maxlength="7" style="max-width:120px"></div></label>' +
+        '<label class="field"><span>Warna aksen (emas)</span><div class="row"><input type="color" id="tmA" value="' + ka + '"><input class="input" id="tmAh" value="' + ka + '" maxlength="7" style="max-width:120px"></div></label></div>' +
+        '<p class="small muted">Warna utama yang terlalu terang otomatis digelapkan agar teks tetap mudah dibaca.</p></div>' : '') +
+      '<div class="card"><b style="display:block;margin-bottom:10px">Pratinjau komponen</b><div class="row wrap-r"><button type="button" class="btn btn-p">' + ic('send') + 'Tombol utama</button><button type="button" class="btn btn-g">' + ic('star') + 'Tombol emas</button><button type="button" class="btn btn-o">Tombol garis</button>' +
+        UI.status('Menunggu Verifikasi') + UI.status('Terlegalisasi') + '<span class="pill gold">Aksen emas</span><span class="chip">ADV</span></div></div>' +
+      '<div class="row" style="justify-content:flex-end"><button type="button" class="btn btn-o ' + (ubah ? '' : 'off') + '" data-act="temaBatal">Batal</button><button type="button" class="btn btn-p ' + (ubah ? '' : 'off') + '" data-act="temaSimpan">' + ic('save') + 'Simpan Tema</button></div></div>';
+  }
+  function pratinjauTema() { var t = O.temaPilih; Tema.pasang(t.k, t.p, t.a); renderTema(); }
 
   function modalPetugas(p) {
     var m = document.createElement('div'); m.className = 'modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
@@ -528,6 +582,22 @@
       UI.busy(t, false);
     }
     else if (a === 'tab') { O.tab = t.dataset.t; vAdmin(); }
+    else if (a === 'temaPilih') {
+      var k = t.dataset.k; O.temaPilih.k = k;
+      if (k === 'kustom') { if (!Tema.valid(O.temaPilih.p)) O.temaPilih.p = '#0B2545'; if (!Tema.valid(O.temaPilih.a)) O.temaPilih.a = '#C9A227'; }
+      pratinjauTema();
+    }
+    else if (a === 'temaBatal') { kembalikanTema(); renderTema(); }
+    else if (a === 'temaSimpan') {
+      var tp = O.temaPilih; UI.busy(t, true, 'Menyimpan...');
+      try {
+        await api('adm.setelanSimpan', { setelan: { TEMA: tp.k, TEMA_PRIMER: tp.k === 'kustom' ? tp.p : '', TEMA_AKSEN: tp.k === 'kustom' ? tp.a : '' } });
+        O.temaAsli = { k: tp.k, p: tp.k === 'kustom' ? tp.p : '', a: tp.k === 'kustom' ? tp.a : '' }; O.temaPilih = Object.assign({}, O.temaAsli);
+        Tema.dariCfg({ TEMA: O.temaAsli.k, TEMA_PRIMER: O.temaAsli.p, TEMA_AKSEN: O.temaAsli.a });
+        try { localStorage.removeItem('ek:boot'); } catch (x) { /* abaikan */ }
+        UI.toast('Tema tersimpan. Portal pemohon memakai tema baru saat dibuka ulang.', 'ok'); renderTema();
+      } catch (err) { UI.toast(err.message, 'err'); UI.busy(t, false); }
+    }
     else if (a === 'waMuat') muatTab();
     else if (a === 'waUlang') { UI.busy(t, true); try { var u = await api('adm.waUlang'); UI.toast(u.ulang + ' pesan diantrekan ulang.', 'ok'); muatTab(); } catch (err) { UI.toast(err.message, 'err'); UI.busy(t, false); } }
     else if (a === 'waHapusToken') { if (await UI.confirm('Hapus token Fonnte?', 'Notifikasi WhatsApp berhenti sampai token baru disimpan.', 'Hapus token', true)) { try { await api('adm.waToken', { token: '__HAPUS__' }); UI.toast('Token dihapus.', 'ok'); muatTab(); } catch (err) { UI.toast(err.message, 'err'); } } }
@@ -552,7 +622,7 @@
       return;
     }
     Api.warm();
-    Api.swr('boot', function () { return Api.get('boot'); }, function (d) { O.boot = d; if (!O.user) renderLogin(); }).catch(function (e) { if (!O.user) UI.toast(e.message, 'err'); });
+    Api.swr('boot', function () { return Api.get('boot'); }, function (d) { O.boot = d; if (window.Tema) Tema.dariCfg(d.cfg); if (!O.user) renderLogin(); }).catch(function (e) { if (!O.user) UI.toast(e.message, 'err'); });
     if (Api.token()) {
       try { var r = await Api.call('auth.saya'); O.user = r.user; masukApp(); return; }
       catch (e) { Api.setToken(''); }

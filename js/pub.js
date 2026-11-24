@@ -22,6 +22,7 @@
   // ---------- Boot: cache dulu (instan), lalu segarkan ----------
   function terapkanBoot(d, dariCache) {
     S.cfg = Object.assign(S.cfg, d.cfg || {});
+    if (window.Tema) Tema.dariCfg(S.cfg);
     S.master = d.master || [];
     S.siap = true;
     $('#brandName').textContent = S.cfg.NAMA_INSTANSI;
