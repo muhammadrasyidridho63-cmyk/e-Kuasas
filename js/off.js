@@ -105,11 +105,12 @@
   function muatList() {
     return Api.swr('off.list', async function () {
       var r = await api('off.list', { v: O.v });
-      if (r.unchanged) return { v: r.v, rows: O.rows, wajib: O.wajib };
+      if (r.unchanged) return { v: r.v, rows: O.rows, wajib: O.wajib, tema: r.tema };
       return r;
     }, function (d, cache) {
       var ganti = d.v !== O.v || !O.loaded;
       O.rows = d.rows || []; O.v = d.v; O.wajib = d.wajib || {}; O.loaded = true;
+      if (d.tema && window.Tema && !(O.route === 'admin' && O.tab === 'tema')) Tema.dariCfg(d.tema);   // tema terbaru ikut tiap sinkron
       if (!cache) { O.lastSync = Date.now(); var s = $('#sync'); if (s) s.textContent = 'Diperbarui ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace('.', ':'); }
       if (ganti) segarkanLayar();
     }, 'session').catch(function (e) { if (O.user && e.code !== 'SESI') UI.toast(e.message, 'err'); });
@@ -591,12 +592,15 @@
     else if (a === 'temaSimpan') {
       var tp = O.temaPilih; UI.busy(t, true, 'Menyimpan...');
       try {
-        await api('adm.setelanSimpan', { setelan: { TEMA: tp.k, TEMA_PRIMER: tp.k === 'kustom' ? tp.p : '', TEMA_AKSEN: tp.k === 'kustom' ? tp.a : '' } });
+        var hs = await api('adm.setelanSimpan', { setelan: { TEMA: tp.k, TEMA_PRIMER: tp.k === 'kustom' ? tp.p : '', TEMA_AKSEN: tp.k === 'kustom' ? tp.a : '' } });
+        if (!hs || !hs.tersimpan || hs.tersimpan.indexOf('TEMA') < 0) {
+          var e2 = new Error('Server belum mendukung tema. Timpa Kode.gs & Aman.gs di Apps Script, lalu Deploy > Kelola deployment > Edit > Versi baru.'); throw e2;
+        }
         O.temaAsli = { k: tp.k, p: tp.k === 'kustom' ? tp.p : '', a: tp.k === 'kustom' ? tp.a : '' }; O.temaPilih = Object.assign({}, O.temaAsli);
         Tema.dariCfg({ TEMA: O.temaAsli.k, TEMA_PRIMER: O.temaAsli.p, TEMA_AKSEN: O.temaAsli.a });
         try { localStorage.removeItem('ek:boot'); } catch (x) { /* abaikan */ }
         UI.toast('Tema tersimpan. Portal pemohon memakai tema baru saat dibuka ulang.', 'ok'); renderTema();
-      } catch (err) { UI.toast(err.message, 'err'); UI.busy(t, false); }
+      } catch (err) { kembalikanTema(); renderTema(); UI.toast(err.message, 'err'); }
     }
     else if (a === 'waMuat') muatTab();
     else if (a === 'waUlang') { UI.busy(t, true); try { var u = await api('adm.waUlang'); UI.toast(u.ulang + ' pesan diantrekan ulang.', 'ok'); muatTab(); } catch (err) { UI.toast(err.message, 'err'); UI.busy(t, false); } }
@@ -624,7 +628,7 @@
     Api.warm();
     Api.swr('boot', function () { return Api.get('boot'); }, function (d) { O.boot = d; if (window.Tema) Tema.dariCfg(d.cfg); if (!O.user) renderLogin(); }).catch(function (e) { if (!O.user) UI.toast(e.message, 'err'); });
     if (Api.token()) {
-      try { var r = await Api.call('auth.saya'); O.user = r.user; masukApp(); return; }
+      try { var r = await Api.call('auth.saya'); O.user = r.user; if (r.tema && window.Tema) Tema.dariCfg(r.tema); masukApp(); return; }
       catch (e) { Api.setToken(''); }
     }
     renderLogin();

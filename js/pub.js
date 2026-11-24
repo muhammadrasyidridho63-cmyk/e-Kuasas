@@ -424,5 +424,12 @@
     Api.swr('boot', function () { return Api.get('boot'); }, terapkanBoot).catch(function (e) {
       UI.toast('Gagal memuat data layanan: ' + e.message, 'err');
     });
+    // Portal yang lama terbuka: ambil ulang pengaturan (termasuk tema) saat tab kembali dilihat
+    var bootTerakhir = Date.now();
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState !== 'visible' || Date.now() - bootTerakhir < 60000) return;
+      bootTerakhir = Date.now();
+      Api.get('boot').then(function (d) { try { localStorage.setItem('ek:boot', JSON.stringify({ t: Date.now(), d: d })); } catch (x) { /* abaikan */ } terapkanBoot(d, false); }).catch(function () { });
+    });
   }
 })();

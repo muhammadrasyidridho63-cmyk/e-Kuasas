@@ -44,7 +44,7 @@
 
   // Pasang dari cfg server lalu ingat untuk muatan berikutnya
   function dariCfg(cfg) {
-    if (!cfg) return;
+    if (!cfg || !cfg.TEMA) return;   // server lama tanpa tema: jangan paksa kembali ke bawaan
     var kode = cfg.TEMA || 'navy-emas', p = cfg.TEMA_PRIMER || '', a = cfg.TEMA_AKSEN || '';
     pasang(kode, p, a);
     try { localStorage.setItem('ek_tema', JSON.stringify({ k: kode, p: p, a: a })); } catch (e) { /* abaikan */ }
