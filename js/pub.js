@@ -5,7 +5,7 @@
   var V = $('#view');
 
   var S = {
-    cfg: { NAMA_INSTANSI: 'Pengadilan Tata Usaha Negara', NAMA_LAYANAN: 'E-Kuasa', NOMINAL_PNBP: '10000', BANK_NAMA: '', BANK_NOREK: '', BANK_ATAS_NAMA: '', CATATAN_PENTING: '', KONTAK_ALAMAT: '', KONTAK_TELEPON: '', KONTAK_EMAIL: '', JAM_LAYANAN: '' },
+    cfg: { NAMA_INSTANSI: 'Pengadilan Tata Usaha Negara', NAMA_LAYANAN: 'E-Kuasa', NOMINAL_PNBP: '10000', BANK_NAMA: '', BANK_NOREK: '', BANK_ATAS_NAMA: '', CATATAN_PENTING: '', KONTAK_ALAMAT: '', KONTAK_TELEPON: '', KONTAK_EMAIL: '', JAM_LAYANAN: '', FOOTER_DESKRIPSI: '', FOOTER_JUDUL_TAUTAN: 'Tautan Penting', FOOTER_HAK_CIPTA: 'Hak Cipta Dilindungi.', FOOTER_TAUTAN: '[]' },
     master: [], siap: false
   };
   var BOLEH_UBAH = ['Menunggu Berkas', 'Menunggu Pembayaran', 'Perlu Perbaikan'];
@@ -38,15 +38,7 @@
     if (r.n === 'beranda') V.innerHTML = berandaHTML();
     else if (r.n === 'daftar' && !W.busy && (W.step === 1 || W.step === 4 || W.step === 5)) V.innerHTML = daftarHTML(r.p);
   }
-  function renderFoot() {
-    var c = S.cfg;
-    $('#foot').innerHTML = '<div class="wrap"><div class="cols"><div><h4>' + esc(c.NAMA_INSTANSI) + '</h4><p class="small">Layanan pendaftaran dan legalisasi surat kuasa secara daring. Unggah berkas, bayar PNBP, dan pantau status tanpa antre.</p></div>' +
-      '<div><h4>Kontak</h4><p class="small">' + (esc(c.KONTAK_ALAMAT) || '&nbsp;') + '</p>' +
-      (c.KONTAK_TELEPON ? '<p class="small">Telepon: ' + esc(c.KONTAK_TELEPON) + '</p>' : '') +
-      (c.KONTAK_EMAIL ? '<p class="small">Email: ' + esc(c.KONTAK_EMAIL) + '</p>' : '') + '</div>' +
-      '<div><h4>Jam Layanan</h4><p class="small">' + (esc(c.JAM_LAYANAN) || 'Pengajuan daring dapat dilakukan kapan saja. Verifikasi dilakukan pada jam kerja.') + '</p></div></div>' +
-      '<p class="tiny" style="margin-top:20px;opacity:.7">&copy; ' + new Date().getFullYear() + ' ' + esc(c.NAMA_INSTANSI) + '</p></div>';
-  }
+  function renderFoot() { $('#foot').innerHTML = UI.footerHTML(S.cfg); }
 
   // ---------- Router ----------
   function rute() {

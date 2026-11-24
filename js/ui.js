@@ -126,5 +126,23 @@
     document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
   };
 
+  // ---------- Footer (dipakai portal pemohon & pratinjau di Admin) ----------
+  UI.tautanFooter = function (v) {
+    try { var a = typeof v === 'string' ? JSON.parse(v || '[]') : v; return Array.isArray(a) ? a.filter(function (x) { return x && x.l && /^https:\/\//.test(x.u || ''); }) : []; } catch (e) { return []; }
+  };
+  UI.footerHTML = function (c) {
+    var esc = UI.esc, ic = UI.ic;
+    var nama = c.NAMA_INSTANSI || 'Pengadilan Tata Usaha Negara';
+    var desk = c.FOOTER_DESKRIPSI || 'Layanan pendaftaran dan legalisasi surat kuasa secara daring. Unggah berkas, bayar PNBP, dan pantau status tanpa antre.';
+    var kontak = [['location_on', c.KONTAK_ALAMAT, ''], ['call', c.KONTAK_TELEPON, ''], ['mail', c.KONTAK_EMAIL, c.KONTAK_EMAIL && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.KONTAK_EMAIL) ? 'mailto:' + c.KONTAK_EMAIL : ''], ['schedule', c.JAM_LAYANAN, '']]
+      .filter(function (k) { return k[1]; })
+      .map(function (k) { var isi = esc(k[1]); return '<li>' + ic(k[0]) + '<span>' + (k[2] ? '<a href="' + esc(k[2]) + '">' + isi + '</a>' : isi) + '</span></li>'; }).join('');
+    var tautan = UI.tautanFooter(c.FOOTER_TAUTAN);
+    var kanan = tautan.length ? '<div class="foot-links"><h4>' + ic('link') + esc(c.FOOTER_JUDUL_TAUTAN || 'Tautan Penting') + '</h4><ul>' +
+      tautan.map(function (t) { return '<li><a href="' + esc(t.u) + '" target="_blank" rel="noopener noreferrer">' + ic('chevron_right') + '<span>' + esc(t.l) + '</span></a></li>'; }).join('') + '</ul></div>' : '';
+    return '<div class="wrap"><div class="foot-grid' + (kanan ? '' : ' satu') + '"><div class="foot-info"><h3>' + esc(nama) + '</h3><p>' + esc(desk) + '</p>' + (kontak ? '<ul class="foot-kontak">' + kontak + '</ul>' : '') + '</div>' + kanan + '</div>' +
+      '<div class="foot-bawah">&copy; ' + new Date().getFullYear() + ' <b>' + esc(nama) + '</b>. ' + esc(c.FOOTER_HAK_CIPTA || 'Hak Cipta Dilindungi.') + '</div></div>';
+  };
+
   window.UI = UI;
 })();

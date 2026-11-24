@@ -284,6 +284,7 @@
 
   var tundaQ = UI.debounce(function () { O.page = 1; renderTabel(); }, 120);
   function onInput(e) {
+    if (e.target.closest('form[data-form="footer"]')) { clearTimeout(O.ftT); O.ftT = setTimeout(pratinjauFooter, 80); return; }
     var tid = e.target.id;
     if (O.temaPilih && /^tm[PA]h?$/.test(tid)) {
       var v = e.target.value.trim(); if (v && v[0] !== '#') v = '#' + v;
@@ -473,9 +474,9 @@
   // ============================================================
   // ADMIN
   // ============================================================
-  var SET_LAB = [['NAMA_INSTANSI', 'Nama instansi'], ['NAMA_LAYANAN', 'Nama layanan'], ['NOMINAL_PNBP', 'Nominal PNBP (Rp)'], ['BANK_NAMA', 'Nama bank'], ['BANK_NOREK', 'Nomor rekening'], ['BANK_ATAS_NAMA', 'Atas nama rekening'], ['CATATAN_PENTING', 'Catatan penting (beranda)'], ['KONTAK_ALAMAT', 'Alamat'], ['KONTAK_TELEPON', 'Telepon'], ['KONTAK_EMAIL', 'Email kontak'], ['JAM_LAYANAN', 'Jam layanan'], ['URL_PORTAL', 'URL portal pemohon (untuk tautan di email)'], ['EMAIL_AKTIF', 'Kirim email notifikasi (Ya/Tidak)']];
+  var SET_LAB = [['NAMA_INSTANSI', 'Nama instansi'], ['NAMA_LAYANAN', 'Nama layanan'], ['NOMINAL_PNBP', 'Nominal PNBP (Rp)'], ['BANK_NAMA', 'Nama bank'], ['BANK_NOREK', 'Nomor rekening'], ['BANK_ATAS_NAMA', 'Atas nama rekening'], ['CATATAN_PENTING', 'Catatan penting (beranda)'],  ['URL_PORTAL', 'URL portal pemohon (untuk tautan di email)'], ['EMAIL_AKTIF', 'Kirim email notifikasi (Ya/Tidak)']];
   function vAdmin() {
-    var tabs = [['petugas', 'Petugas'], ['tema', 'Tema Warna'], ['logo', 'Logo'], ['wa', 'Notifikasi WA'], ['log', 'Log Aktivitas'], ['setelan', 'Pengaturan']];
+    var tabs = [['petugas', 'Petugas'], ['tema', 'Tema Warna'], ['logo', 'Logo'], ['footer', 'Footer'], ['wa', 'Notifikasi WA'], ['log', 'Log Aktivitas'], ['setelan', 'Pengaturan']];
     kembalikanTema(); kembalikanLogo();
     $('#v').innerHTML = '<div class="tabs" role="tablist">' + tabs.map(function (t) { return '<button role="tab" class="' + (O.tab === t[0] ? 'on' : '') + '" data-act="tab" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div><div id="adm"></div>';
     muatTab();
@@ -504,6 +505,15 @@
         O.logoAsli = { b: cl.LOGO_BENTUK || 'lencana', i: cl.LOGO_IKON || 'gavel', g: cl.LOGO_GAMBAR || '' };
         O.logoPilih = Object.assign({}, O.logoAsli);
         renderLogo();
+      } else if (tab === 'footer') {
+        var sf = await api('adm.setelan');
+        if (O.tab !== tab || !$('#adm')) return;
+        var cf = sf.setelan || {}; O.footCfg = cf;
+        var fo = {}; FOOT_KUNCI.forEach(function (k) { fo[k] = cf[k] || ''; });
+        if (!fo.FOOTER_JUDUL_TAUTAN) fo.FOOTER_JUDUL_TAUTAN = 'Tautan Penting';
+        if (!fo.FOOTER_HAK_CIPTA) fo.FOOTER_HAK_CIPTA = 'Hak Cipta Dilindungi.';
+        fo.tautan = UI.tautanFooter(cf.FOOTER_TAUTAN);
+        renderFooterAdm(fo);
       } else if (tab === 'wa') {
         var w = await api('adm.waStatus'), q = await api('adm.waAntrean');
         if (O.tab !== tab || !$('#adm')) return;
@@ -602,6 +612,55 @@
       img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('Gambar tidak bisa dibaca.')); };
       img.src = url;
     });
+  }
+
+  // ---------- Footer ----------
+  var FOOT_KUNCI = ['FOOTER_DESKRIPSI', 'KONTAK_ALAMAT', 'KONTAK_TELEPON', 'KONTAK_EMAIL', 'JAM_LAYANAN', 'FOOTER_JUDUL_TAUTAN', 'FOOTER_HAK_CIPTA'];
+  function bacaFormFooter() {
+    var f = $('form[data-form="footer"]'); if (!f) return null;
+    var o = {};
+    FOOT_KUNCI.forEach(function (k) { o[k] = f.elements[k].value; });
+    o.tautan = UI.$$('.tautan-ed .baris', f).map(function (b) { return { l: b.querySelector('[data-l]').value.trim(), u: b.querySelector('[data-u]').value.trim() }; });
+    return o;
+  }
+  function cfgFooter(o) {
+    var c = Object.assign({}, (O.boot && O.boot.cfg) || {}, O.footCfg || {});
+    FOOT_KUNCI.forEach(function (k) { c[k] = o[k]; });
+    c.FOOTER_TAUTAN = JSON.stringify(o.tautan.filter(function (t) { return t.l && /^https:\/\/\S+$/.test(t.u); }));
+    return c;
+  }
+  function barisTautan(t, i, n) {
+    return '<div class="baris" data-i="' + i + '"><input class="input" data-l maxlength="60" placeholder="Nama tautan, mis. SIPP PTUN" value="' + esc(t.l) + '" aria-label="Nama tautan ' + (i + 1) + '">' +
+      '<input class="input" data-u type="url" maxlength="290" placeholder="https://..." value="' + esc(t.u) + '" aria-label="Alamat tautan ' + (i + 1) + '" spellcheck="false" autocapitalize="none">' +
+      '<span class="aksi"><button type="button" data-act="tautanNaik" aria-label="Naikkan"' + (i ? '' : ' disabled') + '>' + ic('arrow_upward') + '</button><button type="button" data-act="tautanTurun" aria-label="Turunkan"' + (i < n - 1 ? '' : ' disabled') + '>' + ic('arrow_downward') + '</button><button type="button" data-act="tautanHapus" aria-label="Hapus tautan">' + ic('delete') + '</button></span></div>';
+  }
+  function renderFooterAdm(o) {
+    var el = $('#adm'); if (!el) return;
+    var fld = function (k, label, ph, panjang, help) {
+      return '<label class="field"' + (panjang ? ' style="grid-column:1/-1"' : '') + '><span>' + label + '</span>' + (panjang ? '<textarea class="input" name="' + k + '" maxlength="600" rows="3" placeholder="' + esc(ph) + '">' + esc(o[k]) + '</textarea>' : '<input class="input" name="' + k + '" maxlength="400" placeholder="' + esc(ph) + '" value="' + esc(o[k]) + '">') + (help ? '<small class="muted">' + help + '</small>' : '') + '</label>';
+    };
+    el.innerHTML = '<form class="stack" data-form="footer">' +
+      '<div class="card stack-s"><b>Pratinjau</b><div class="foot-pv"><footer class="foot" id="footPv"></footer></div></div>' +
+      '<div class="card stack-s"><b>Informasi instansi</b><p class="small muted" style="margin-top:-4px">Judul footer memakai Nama Instansi dari tab Pengaturan.</p><div class="grid g2">' +
+        fld('FOOTER_DESKRIPSI', 'Deskripsi / wilayah hukum', 'Wilayah Hukum Pengadilan Tata Usaha Negara ... meliputi ...', true) +
+        fld('KONTAK_ALAMAT', 'Alamat', 'Jl. ...', true) + fld('KONTAK_TELEPON', 'Telepon', '0711-xxxxxx / 08xx-xxxx-xxxx') + fld('KONTAK_EMAIL', 'Email', 'nama@instansi.go.id') +
+        fld('JAM_LAYANAN', 'Jam layanan', 'Senin–Jumat, 08.00–16.00 WIB', false, 'Kosongkan bila tidak ingin ditampilkan.') + '</div></div>' +
+      '<div class="card stack-s"><div class="row between wrap-r"><b>Tautan penting</b><span class="tiny muted" id="jmlTautan"></span></div>' +
+        fld('FOOTER_JUDUL_TAUTAN', 'Judul kolom tautan', 'Tautan Penting') +
+        '<div class="tautan-ed">' + o.tautan.map(function (t, i) { return barisTautan(t, i, o.tautan.length); }).join('') + '</div>' +
+        '<div class="row"><button type="button" class="btn btn-o btn-s" data-act="tautanTambah"' + (o.tautan.length >= 10 ? ' disabled' : '') + '>' + ic('add_link') + 'Tambah tautan</button></div>' +
+        '<p class="small muted">Alamat harus diawali <b>https://</b>. Tautan dibuka di tab baru. Kosongkan semua tautan untuk menyembunyikan kolom ini.</p></div>' +
+      '<div class="card stack-s">' + fld('FOOTER_HAK_CIPTA', 'Teks hak cipta (setelah © tahun dan nama instansi)', 'Hak Cipta Dilindungi.') + '</div>' +
+      '<div class="row" style="justify-content:flex-end"><button type="submit" class="btn btn-p">' + ic('save') + 'Simpan Footer</button></div></form>';
+    O.footForm = o; pratinjauFooter();
+  }
+  function pratinjauFooter() {
+    var o = bacaFormFooter(); if (!o) return;
+    var pv = $('#footPv'); if (pv) pv.innerHTML = UI.footerHTML(cfgFooter(o));
+    var j = $('#jmlTautan'); if (j) j.textContent = o.tautan.length + ' dari 10';
+  }
+  function ubahTautan(fn) {
+    var o = bacaFormFooter(); fn(o.tautan); renderFooterAdm(o);
   }
 
   // ---------- Tema warna ----------
@@ -704,6 +763,27 @@
     });
   }
 
+  async function simpanFooter(f) {
+    var o = bacaFormFooter(), btn = f.querySelector('button[type=submit]');
+    var kosong = o.tautan.filter(function (t) { return !t.l && (!t.u || t.u === 'https://'); });
+    o.tautan = o.tautan.filter(function (t) { return kosong.indexOf(t) < 0; });   // baris kosong diabaikan
+    for (var i = 0; i < o.tautan.length; i++) {
+      var t = o.tautan[i];
+      if (!t.l) { UI.toast('Nama tautan ke-' + (i + 1) + ' masih kosong.', 'warn'); return; }
+      if (!/^https:\/\/[^\s"'<>]{3,}$/.test(t.u)) { UI.toast('Alamat "' + t.l + '" harus diawali https:// dan tanpa spasi.', 'warn'); return; }
+    }
+    if (o.KONTAK_EMAIL && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.KONTAK_EMAIL.trim())) { UI.toast('Format email kontak tidak valid.', 'warn'); return; }
+    var data = {}; FOOT_KUNCI.forEach(function (k) { data[k] = o[k]; }); data.FOOTER_TAUTAN = JSON.stringify(o.tautan);
+    UI.busy(btn, true, 'Menyimpan...');
+    try {
+      var h = await api('adm.setelanSimpan', { setelan: data });
+      if (!h || !h.tersimpan || h.tersimpan.indexOf('FOOTER_TAUTAN') < 0) throw new Error('Server belum mendukung pengaturan footer. Timpa Kode.gs di Apps Script, lalu Deploy > Kelola deployment > Edit > Versi baru.');
+      try { localStorage.removeItem('ek:boot'); } catch (x) { /* abaikan */ }
+      if (O.boot && O.boot.cfg) Object.assign(O.boot.cfg, data);
+      UI.toast('Footer tersimpan. Portal pemohon memakai footer baru saat dibuka ulang.', 'ok'); renderFooterAdm(o);
+    } catch (err) { UI.toast(err.message, 'err'); UI.busy(btn, false); }
+  }
+
   async function submitWa(f) {
     var btn = f.querySelector('button:not([type="button"])'), jenis = f.dataset.form;
     UI.busy(btn, true);
@@ -725,6 +805,8 @@
   }
 
   async function onSubmit(e) {
+    var ff = e.target.closest('form[data-form="footer"]');
+    if (ff) { e.preventDefault(); return simpanFooter(ff); }
     var fw = e.target.closest('form[data-form^="wa"]');
     if (fw) { e.preventDefault(); return submitWa(fw); }
     var f = e.target.closest('form[data-form="setelan"]'); if (!f) return;
@@ -805,6 +887,14 @@
         try { var tm = JSON.parse(localStorage.getItem('ek_tema') || '{}'); tm.lb = lp.b; tm.li = lp.i; tm.lg = lp.g; localStorage.setItem('ek_tema', JSON.stringify(tm)); localStorage.removeItem('ek:boot'); } catch (x) { /* abaikan */ }
         UI.toast('Logo tersimpan. Portal pemohon memakai logo baru saat dibuka ulang.', 'ok'); renderLogo();
       } catch (err) { kembalikanLogo(); renderLogo(); UI.toast(err.message, 'err'); }
+    }
+    else if (a === 'tautanTambah') ubahTautan(function (l) { if (l.length < 10) l.push({ l: '', u: 'https://' }); });
+    else if (a === 'tautanHapus' || a === 'tautanNaik' || a === 'tautanTurun') {
+      var ix = Number(t.closest('.baris').dataset.i);
+      ubahTautan(function (l) {
+        if (a === 'tautanHapus') l.splice(ix, 1);
+        else { var ke = a === 'tautanNaik' ? ix - 1 : ix + 1; var x = l[ix]; l[ix] = l[ke]; l[ke] = x; }
+      });
     }
     else if (a === 'waMuat') muatTab();
     else if (a === 'waUlang') { UI.busy(t, true); try { var u = await api('adm.waUlang'); UI.toast(u.ulang + ' pesan diantrekan ulang.', 'ok'); muatTab(); } catch (err) { UI.toast(err.message, 'err'); UI.busy(t, false); } }

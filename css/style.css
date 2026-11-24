@@ -355,3 +355,36 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}
 .unggah-logo .kotak-img{width:72px;height:72px;border-radius:12px;border:1px dashed var(--border);display:grid;place-items:center;background:#fff;overflow:hidden}
 .unggah-logo .kotak-img img{width:100%;height:100%;object-fit:contain}
 .pil{min-width:0;overflow:hidden}.ikon-grid .pil .ms{max-width:100%;overflow:hidden;white-space:nowrap}
+
+/* ===== Footer model instansi ===== */
+.foot{background:linear-gradient(160deg,var(--navy) 0%,var(--navy-d) 100%);color:rgba(255,255,255,.86);padding:40px 0 0;margin-top:40px}
+.foot-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:40px 72px;padding-bottom:28px}
+.foot-grid.satu{grid-template-columns:minmax(0,1fr)}
+.foot-info h3{color:#fff;font-size:17px;font-weight:800;letter-spacing:.01em;text-transform:uppercase;line-height:1.3}
+.foot-info>p{font-size:13.5px;line-height:1.6;margin-top:12px;max-width:560px;color:rgba(255,255,255,.82)}
+.foot-kontak{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:10px}
+.foot-kontak li{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.45}
+.foot-kontak .ms{font-size:18px;color:var(--gold);flex:none;margin-top:1px}
+.foot-kontak a{color:inherit;text-decoration:none}.foot-kontak a:hover{color:var(--gold-on);text-decoration:underline}
+.foot-links h4{display:flex;align-items:center;gap:8px;color:#fff;font-size:14.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.12);margin:0}
+.foot-links h4 .ms{color:var(--gold);font-size:19px}
+.foot-links ul{list-style:none;margin:10px 0 0;padding:0;display:grid}
+.foot-links a{display:flex;align-items:center;gap:8px;padding:6px 0;color:rgba(255,255,255,.86);text-decoration:none;font-size:13.5px;transition:color .15s,transform .15s}
+.foot-links a .ms{font-size:18px;color:var(--gold-on);transition:transform .15s}
+.foot-links a:hover{color:#fff}.foot-links a:hover .ms{transform:translateX(3px)}
+.foot-bawah{border-top:1px solid rgba(255,255,255,.12);padding:16px 0 20px;text-align:center;font-size:12px;color:rgba(255,255,255,.7)}
+.foot-bawah b{color:#fff;font-weight:700}
+.foot a:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:4px}
+@media(max-width:760px){.foot-grid{grid-template-columns:minmax(0,1fr);gap:28px}.foot{padding-top:32px}}
+body.has-tabbar .foot-bawah{padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))}
+/* Admin: editor footer */
+.foot-pv{border-radius:var(--rc);overflow:hidden;border:1px solid var(--border)}
+.foot-pv .foot{margin:0;padding-top:28px}.foot-pv .wrap{padding:0 20px}
+.tautan-ed{display:grid;gap:8px}
+.tautan-ed .baris{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) auto;gap:8px;align-items:center}
+.tautan-ed .aksi{display:flex;gap:2px}
+.tautan-ed .aksi button{width:36px;height:40px;border:1px solid var(--border);background:var(--surface);border-radius:8px;display:grid;place-items:center;color:var(--text2);overflow:hidden}
+.tautan-ed .aksi button:hover{color:var(--navy);background:var(--navy-l)}
+.tautan-ed .aksi button[disabled]{opacity:.35;pointer-events:none}
+@media(max-width:640px){.tautan-ed .baris{grid-template-columns:minmax(0,1fr);padding:10px;border:1px solid var(--border);border-radius:10px}.tautan-ed .aksi{justify-content:flex-end}}
+.grid>*{min-width:0}
