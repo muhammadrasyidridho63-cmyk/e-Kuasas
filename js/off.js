@@ -22,24 +22,97 @@
   // ============================================================
   // LOGIN
   // ============================================================
+  // Latar panel kiri: fasad gedung kaca dalam perspektif (SVG, ikut warna tema, tanpa gambar dari luar)
+  var FASAD = (function () {
+    var vp = [700, 40], out = '';
+    function titik(bx, by, t) { return [vp[0] + (bx - vp[0]) * t, vp[1] + (by - vp[1]) * t]; }
+    function poli(a, b, c, d, op, garis) {
+      return '<path d="M' + [a, b, c, d].map(function (q) { return q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join('L') + 'Z" fill="#fff" fill-opacity="' + op + '" stroke="' + (garis || '#fff') + '" stroke-opacity="' + (garis ? .55 : .14) + '" stroke-width="' + (garis ? 1.4 : 1) + '"/>';
+    }
+    var T_ = [1, .74, .55, .41, .3, .22];               // kedalaman lantai (perspektif)
+    var dinding = [[[-200, 1000], [520, 1000]], [[520, 1000], [1000, 1000]], [[-200, 1000], [-200, 120]]];
+    dinding.forEach(function (w, wi) {
+      var kol = wi === 2 ? 5 : 7;
+      for (var c = 0; c < kol; c++) {
+        var u0 = c / kol, u1 = (c + 1) / kol;
+        var b0 = [w[0][0] + (w[1][0] - w[0][0]) * u0, w[0][1] + (w[1][1] - w[0][1]) * u0];
+        var b1 = [w[0][0] + (w[1][0] - w[0][0]) * u1, w[0][1] + (w[1][1] - w[0][1]) * u1];
+        for (var r = 0; r < T_.length - 1; r++) {
+          var s = (c * 7 + r * 3 + wi * 5) % 9;
+          var op = [.02, .05, .09, .03, .12, .06, .015, .08, .04][s];
+          var emas = (wi === 0 && c === 4 && r === 1) || (wi === 1 && c === 2 && r === 2) ? 'var(--gold)' : '';
+          out += poli(titik(b0[0], b0[1], T_[r]), titik(b1[0], b1[1], T_[r]), titik(b1[0], b1[1], T_[r + 1]), titik(b0[0], b0[1], T_[r + 1]), emas ? .1 : op, emas);
+        }
+      }
+    });
+    out += '<path d="M700 40 L-200 1000" stroke="var(--gold)" stroke-opacity=".5" stroke-width="1.2"/><path d="M700 40 L520 1000" stroke="#fff" stroke-opacity=".35" stroke-width="1.5"/>';
+    return '<svg class="lgn-bg" viewBox="0 0 800 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<defs><linearGradient id="lgGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--navy)"/><stop offset="1" stop-color="var(--navy-d)"/></linearGradient>' +
+      '<linearGradient id="lgFade" x1="0" y1="0" x2="0" y2="1"><stop offset=".35" stop-color="var(--navy-d)" stop-opacity="0"/><stop offset="1" stop-color="var(--navy-d)" stop-opacity=".92"/></linearGradient>' +
+      '<radialGradient id="lgShine" cx=".85" cy=".05" r=".7"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>' +
+      '<rect width="800" height="1000" fill="url(#lgGrad)"/>' + out + '<rect width="800" height="1000" fill="url(#lgShine)"/><rect width="800" height="1000" fill="url(#lgFade)"/></svg>';
+  })();
+  var SLIDE = [
+    ['Verifikasi Lebih Cepat. Legalisasi Lebih Tertib.', 'Periksa berkas surat kuasa, minta perbaikan, dan unggah dokumen legalisasi dari satu dashboard.'],
+    ['Tanpa Antre. Tanpa Berkas Hilang.', 'Pemohon mengunggah persyaratan secara daring, dan setiap langkah verifikasi tercatat dalam riwayat.'],
+    ['Rapi di Laptop maupun Ponsel.', 'Antrean, laporan per kelompok kuasa, dan ekspor buku register siap kapan saja.']
+  ];
+  function geserSlide(n) {
+    var h = $('#lgH'), s = $('#lgS'); if (!h) { clearInterval(O.lgTimer); return; }
+    O.lgIdx = (n + SLIDE.length) % SLIDE.length;
+    var box = $('.lgn-copy'); box.classList.remove('in'); void box.offsetWidth; box.classList.add('in');
+    h.textContent = SLIDE[O.lgIdx][0]; s.textContent = SLIDE[O.lgIdx][1];
+    UI.$$('.lgn-dots button').forEach(function (b, i) { b.classList.toggle('on', i === O.lgIdx); b.setAttribute('aria-current', i === O.lgIdx); });
+  }
+
   function renderLogin() {
     var b = O.boot || {};
-    var sig = JSON.stringify([b.googleClientId, b.darurat]);
-    if (sig === O.loginSig && $('.login')) return;
+    var sig = JSON.stringify([b.googleClientId, b.darurat, (b.cfg || {}).NAMA_INSTANSI]);
+    if (sig === O.loginSig && $('.lgn')) return;
     O.loginSig = sig;
-    APP.innerHTML = '<div class="login"><div class="card stack"><div class="row"><span class="brand-mark" style="width:44px;height:44px">' + ic('gavel', 'fill') + '</span><div><b style="color:var(--navy)">E-Kuasa</b><div class="small muted">Dashboard Petugas</div></div></div>' +
-      '<div><h2 style="font-size:22px">Masuk Petugas</h2><p class="muted small" style="margin-top:4px">Gunakan akun Google yang sudah didaftarkan admin.</p></div>' +
-      (b.googleClientId ? '<div id="gbtn" style="min-height:44px;display:flex;justify-content:center"></div>' :
-        '<div class="banner">' + ic('info') + '<div class="small">Login Google belum dikonfigurasi (GOOGLE_CLIENT_ID).' + (b.darurat ? ' Gunakan akses darurat di bawah.' : '') + '</div></div>') +
-      (b.darurat ? '<details><summary class="small bold" style="cursor:pointer;padding:8px 0">Akses darurat</summary><form id="fdar" class="stack-s" style="margin-top:8px"><label class="field"><span>Nama pengguna</span><input class="input" name="user" autocomplete="username" required></label><label class="field"><span>Sandi</span><input class="input" type="password" name="pass" autocomplete="current-password" required></label><button class="btn btn-p btn-block">Masuk</button></form></details>' : '') +
-      '<a class="small" href="index.html">&larr; Kembali ke portal pemohon</a></div></div>';
+    var inst = (b.cfg && b.cfg.NAMA_INSTANSI) || 'Pengadilan Tata Usaha Negara';
+    var form = b.darurat ? '<form id="fdar" class="lgn-form" autocomplete="on">' +
+      '<label class="lgn-f"><span>Nama pengguna</span><input class="input" name="user" autocomplete="username" placeholder="Masukkan nama pengguna" required></label>' +
+      '<label class="lgn-f"><span>Sandi</span><span class="lgn-pw"><input class="input" type="password" name="pass" id="lgPass" autocomplete="current-password" placeholder="Masukkan sandi" required>' +
+      '<button type="button" class="lgn-eye" id="lgEye" aria-label="Tampilkan sandi" aria-pressed="false">' + ic('visibility') + '</button></span></label>' +
+      '<div class="lgn-row"><span class="lgn-muted">' + ic('shield_lock') + 'Akses darurat admin</span><button type="button" class="lgn-link" id="lgLupa" aria-expanded="false">Lupa sandi?</button></div>' +
+      '<p class="lgn-note" id="lgNote" hidden>Sandi darurat dibuat ulang oleh pemilik Apps Script dengan menjalankan fungsi <b>resetAksesDarurat</b>. Sandi baru muncul di Log eksekusi.</p>' +
+      '<button class="lgn-btn">Masuk</button></form>' : '';
+    var google = b.googleClientId ? '<div id="gbtn" class="lgn-g"></div>' :
+      '<div class="banner" style="margin:0">' + ic('info') + '<div class="small">Login Google belum dikonfigurasi (GOOGLE_CLIENT_ID).' + (b.darurat ? ' Gunakan akses darurat di atas.' : '') + '</div></div>';
+    var pemisah = b.darurat ? '<div class="lgn-or"><span>atau lanjutkan dengan</span></div>' : '';
+    APP.innerHTML = '<div class="lgn">' +
+      '<section class="lgn-hero">' + FASAD +
+        '<div class="lgn-top"><a class="lgn-brand" href="index.html"><span class="lgn-mark">' + ic('gavel', 'fill') + '</span><span>E-Kuasa<small>' + esc(inst) + '</small></span></a>' +
+        '<a class="lgn-back" href="index.html">' + ic('arrow_back') + '<span>Kembali ke Portal</span></a></div>' +
+        '<div class="lgn-copy in"><h2 id="lgH">' + esc(SLIDE[0][0]) + '</h2><p id="lgS">' + esc(SLIDE[0][1]) + '</p>' +
+        '<div class="lgn-dots" role="group" aria-label="Pilih slide">' + SLIDE.map(function (x, i) { return '<button type="button" data-i="' + i + '" class="' + (i ? '' : 'on') + '" aria-label="Slide ' + (i + 1) + '"></button>'; }).join('') + '</div></div>' +
+      '</section>' +
+      '<section class="lgn-side"><div class="lgn-card">' +
+        '<h1>Selamat Datang Kembali!</h1><p class="lgn-sub">Masuk untuk memverifikasi dan melegalisasi surat kuasa.</p>' +
+        form + pemisah + google +
+        '<p class="lgn-foot">Bukan petugas? <a href="index.html">Kembali ke portal pemohon</a></p>' +
+      '</div></section></div>';
+    O.lgIdx = 0; clearInterval(O.lgTimer);
+    if (!window.matchMedia || !matchMedia('(prefers-reduced-motion: reduce)').matches) O.lgTimer = setInterval(function () { geserSlide(O.lgIdx + 1); }, 6000);
     if (b.googleClientId) muatGoogle(b.googleClientId);
   }
+  APP.addEventListener('click', function (e) {
+    var d = e.target.closest('.lgn-dots button');
+    if (d) { clearInterval(O.lgTimer); geserSlide(Number(d.dataset.i)); return; }
+    if (e.target.closest('#lgEye')) {
+      var inp = $('#lgPass'), eye = $('#lgEye'), lihat = inp.type === 'password';
+      inp.type = lihat ? 'text' : 'password'; eye.setAttribute('aria-pressed', lihat); eye.setAttribute('aria-label', lihat ? 'Sembunyikan sandi' : 'Tampilkan sandi');
+      eye.innerHTML = ic(lihat ? 'visibility_off' : 'visibility'); return;
+    }
+    if (e.target.closest('#lgLupa')) { var n = $('#lgNote'); n.hidden = !n.hidden; $('#lgLupa').setAttribute('aria-expanded', !n.hidden); }
+  });
   function muatGoogle(cid) {
     var init = function () {
       if (!window.google || !google.accounts || !$('#gbtn')) return;
       google.accounts.id.initialize({ client_id: cid, callback: onGoogle, auto_select: false });
-      google.accounts.id.renderButton($('#gbtn'), { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', width: Math.min(320, window.innerWidth - 90), locale: 'id' });
+      var lebar = Math.max(220, Math.min(400, Math.floor($('#gbtn').getBoundingClientRect().width || 320)));
+      google.accounts.id.renderButton($('#gbtn'), { theme: 'outline', size: 'large', text: 'continue_with', shape: 'pill', width: lebar, logo_alignment: 'center', locale: 'id' });
     };
     if (window.google && google.accounts) return init();
     if (document.getElementById('gsi')) return;
@@ -56,7 +129,7 @@
   document.addEventListener('submit', async function (e) {
     var f = e.target.closest('#fdar'); if (!f) return;
     e.preventDefault();
-    var btn = f.querySelector('button'); UI.busy(btn, true, 'Memeriksa...');
+    var btn = f.querySelector('.lgn-btn'); UI.busy(btn, true, 'Memeriksa...');
     try {
       var r = await Api.call('auth.darurat', { user: f.user.value, pass: f.pass.value });
       Api.setToken(r.token); O.user = r.user; masukApp();
@@ -82,6 +155,7 @@
     return m;
   }
   function masukApp() {
+    clearInterval(O.lgTimer);
     var m = menu();
     var nav = m.map(function (x) { return '<a href="' + x[3] + '" data-r="' + x[0] + '">' + ic(x[1]) + '<span>' + x[2] + '</span></a>'; }).join('');
     var tab = m.map(function (x) { return '<a href="' + x[3] + '" data-r="' + x[0] + '">' + ic(x[1]) + (x[2] === 'Antrean Verifikasi' ? 'Antrean' : x[2]) + '</a>'; }).join('');
