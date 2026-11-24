@@ -42,15 +42,58 @@
     return w;
   }
 
+
+  // ---------- Logo: bentuk + isi (ikon bawaan / gambar unggahan) ----------
+  var BENTUK = {
+    lencana:   { nama: 'Lencana',          ket: 'Lingkaran bercincin emas, seperti stempel resmi.' },
+    lingkaran: { nama: 'Lingkaran',        ket: 'Bulat penuh, bersih dan modern.' },
+    kotak:     { nama: 'Kotak Membulat',   ket: 'Bentuk sebelumnya, sudut membulat.' },
+    perisai:   { nama: 'Perisai',          ket: 'Bentuk tameng, kesan perlindungan hukum.' },
+    polos:     { nama: 'Tanpa Bingkai',    ket: 'Hanya ikon atau gambar, tanpa latar.' }
+  };
+  var IKON = { gavel: 'Palu hakim', balance: 'Timbangan', account_balance: 'Gedung', policy: 'Dokumen hukum', verified_user: 'Terverifikasi', workspace_premium: 'Lencana', local_police: 'Lambang', shield: 'Perisai' };
+  var LOGO = { b: 'lencana', i: 'gavel', g: '' };
+  function isiLogo() {
+    return LOGO.g ? '<img src="' + LOGO.g + '" alt="" draggable="false">' : '<span class="ms fill" aria-hidden="true">' + (IKON[LOGO.i] ? LOGO.i : 'gavel') + '</span>';
+  }
+  function tempelLogo(root) {
+    var sig = LOGO.b + '|' + LOGO.i + '|' + LOGO.g.length + LOGO.g.slice(-24);
+    (root || document).querySelectorAll('.brand-mark:not([data-contoh]),.lgn-mark').forEach(function (el) {
+      if (el.getAttribute('data-sig') === sig) return;
+      el.setAttribute('data-sig', sig); el.setAttribute('data-bentuk', LOGO.b);
+      el.classList.toggle('pakai-gambar', !!LOGO.g);
+      el.innerHTML = isiLogo();
+    });
+  }
+  function pasangLogo(bentuk, ikon, gambar) {
+    LOGO = { b: BENTUK[bentuk] ? bentuk : 'lencana', i: IKON[ikon] ? ikon : 'gavel', g: /^data:image\/(png|jpeg|webp);base64,/.test(gambar || '') ? gambar : '' };
+    document.documentElement.setAttribute('data-logo', LOGO.b);
+    if (document.body) tempelLogo();
+    // ikon tab browser ikut memakai logo unggahan
+    var fav = document.querySelector('link[rel="icon"]');
+    if (LOGO.g) { if (!fav) { fav = document.createElement('link'); fav.rel = 'icon'; document.head.appendChild(fav); } fav.href = LOGO.g; }
+  }
+  // Elemen logo yang baru dirender (header, sidebar, login) langsung disesuaikan
+  function amati() {
+    tempelLogo();
+    var antri = false;
+    new MutationObserver(function () { if (antri) return; antri = true; requestAnimationFrame(function () { antri = false; tempelLogo(); }); })
+      .observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.body) amati(); else document.addEventListener('DOMContentLoaded', amati);
+
   // Pasang dari cfg server lalu ingat untuk muatan berikutnya
   function dariCfg(cfg) {
-    if (!cfg || !cfg.TEMA) return;   // server lama tanpa tema: jangan paksa kembali ke bawaan
-    var kode = cfg.TEMA || 'navy-emas', p = cfg.TEMA_PRIMER || '', a = cfg.TEMA_AKSEN || '';
-    pasang(kode, p, a);
-    try { localStorage.setItem('ek_tema', JSON.stringify({ k: kode, p: p, a: a })); } catch (e) { /* abaikan */ }
+    if (!cfg) return;   // server lama tanpa tema/logo: jangan paksa kembali ke bawaan
+    var s = {}; try { s = JSON.parse(localStorage.getItem('ek_tema') || '{}') || {}; } catch (e) { s = {}; }
+    if (cfg.TEMA) { s.k = cfg.TEMA; s.p = cfg.TEMA_PRIMER || ''; s.a = cfg.TEMA_AKSEN || ''; pasang(s.k, s.p, s.a); }
+    if (cfg.LOGO_BENTUK) { s.lb = cfg.LOGO_BENTUK; s.li = cfg.LOGO_IKON || 'gavel'; s.lg = cfg.LOGO_GAMBAR || ''; pasangLogo(s.lb, s.li, s.lg); }
+    if (!cfg.TEMA && !cfg.LOGO_BENTUK) return;
+    try { localStorage.setItem('ek_tema', JSON.stringify(s)); } catch (e) { /* abaikan */ }
   }
 
-  window.Tema = { daftar: TEMA, pasang: pasang, dariCfg: dariCfg, turunan: turunan, valid: function (h) { return !!hex(h); } };
+  window.Tema = { daftar: TEMA, pasang: pasang, dariCfg: dariCfg, turunan: turunan, valid: function (h) { return !!hex(h); },
+    bentuk: BENTUK, ikon: IKON, pasangLogo: pasangLogo, logo: function () { return { b: LOGO.b, i: LOGO.i, g: LOGO.g }; } };
 
-  try { var s = JSON.parse(localStorage.getItem('ek_tema') || 'null'); if (s) pasang(s.k, s.p, s.a); } catch (e) { /* abaikan */ }
+  try { var s = JSON.parse(localStorage.getItem('ek_tema') || 'null'); if (s) { pasang(s.k, s.p, s.a); pasangLogo(s.lb, s.li, s.lg || ''); } else pasangLogo('lencana', 'gavel', ''); } catch (e) { pasangLogo('lencana', 'gavel', ''); }
 })();

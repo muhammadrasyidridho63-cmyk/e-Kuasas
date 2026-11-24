@@ -185,7 +185,7 @@
     }, function (d, cache) {
       var ganti = d.v !== O.v || !O.loaded;
       O.rows = d.rows || []; O.v = d.v; O.wajib = d.wajib || {}; O.loaded = true;
-      if (d.tema && window.Tema && !(O.route === 'admin' && O.tab === 'tema')) Tema.dariCfg(d.tema);   // tema terbaru ikut tiap sinkron
+      if (d.tema && window.Tema && !(O.route === 'admin' && (O.tab === 'tema' || O.tab === 'logo'))) Tema.dariCfg(d.tema);   // tema terbaru ikut tiap sinkron
       if (!cache) { O.lastSync = Date.now(); var s = $('#sync'); if (s) s.textContent = 'Diperbarui ' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace('.', ':'); }
       if (ganti) segarkanLayar();
     }, 'session').catch(function (e) { if (O.user && e.code !== 'SESI') UI.toast(e.message, 'err'); });
@@ -207,7 +207,7 @@
   function tampil() {
     if (!O.user) return;
     var r = parseRute();
-    if (r.n !== 'admin') kembalikanTema();
+    if (r.n !== 'admin') { kembalikanTema(); kembalikanLogo(); }
     O.route = r.n;
     UI.$$('.side nav a,.tabbar a').forEach(function (a) { a.classList.toggle('on', a.dataset.r === (r.n === 'detail' ? 'antrean' : r.n)); });
     $('#judul').textContent = JUDUL[r.n];
@@ -305,6 +305,11 @@
     else if (t.id === 'fdari') { O.f.dari = t.value; O.page = 1; renderTabel(); }
     else if (t.id === 'fsampai') { O.f.sampai = t.value; O.page = 1; renderTabel(); }
     else if (t.id === 'lgDari' || t.id === 'lgSampai' || t.id === 'lgKel') { O.lg = O.lg || {}; O.lg[t.id] = t.value; renderLaporan(); }
+    else if (t.matches && t.matches('input[data-logo-file]')) {
+      var fl = t.files[0]; t.value = ''; if (!fl) return;
+      kecilkanLogo(fl).then(function (g) { O.logoPilih.g = g; pratinjauLogo(); UI.toast('Gambar siap. Klik Simpan Logo untuk menerapkan.', ''); })
+        .catch(function (err) { UI.toast(err.message, 'err'); });
+    }
     else if (t.matches && t.matches('input[data-legal]')) uploadLegal(t);
   }
 
@@ -470,8 +475,8 @@
   // ============================================================
   var SET_LAB = [['NAMA_INSTANSI', 'Nama instansi'], ['NAMA_LAYANAN', 'Nama layanan'], ['NOMINAL_PNBP', 'Nominal PNBP (Rp)'], ['BANK_NAMA', 'Nama bank'], ['BANK_NOREK', 'Nomor rekening'], ['BANK_ATAS_NAMA', 'Atas nama rekening'], ['CATATAN_PENTING', 'Catatan penting (beranda)'], ['KONTAK_ALAMAT', 'Alamat'], ['KONTAK_TELEPON', 'Telepon'], ['KONTAK_EMAIL', 'Email kontak'], ['JAM_LAYANAN', 'Jam layanan'], ['URL_PORTAL', 'URL portal pemohon (untuk tautan di email)'], ['EMAIL_AKTIF', 'Kirim email notifikasi (Ya/Tidak)']];
   function vAdmin() {
-    var tabs = [['petugas', 'Petugas'], ['tema', 'Tema Warna'], ['wa', 'Notifikasi WA'], ['log', 'Log Aktivitas'], ['setelan', 'Pengaturan']];
-    kembalikanTema();
+    var tabs = [['petugas', 'Petugas'], ['tema', 'Tema Warna'], ['logo', 'Logo'], ['wa', 'Notifikasi WA'], ['log', 'Log Aktivitas'], ['setelan', 'Pengaturan']];
+    kembalikanTema(); kembalikanLogo();
     $('#v').innerHTML = '<div class="tabs" role="tablist">' + tabs.map(function (t) { return '<button role="tab" class="' + (O.tab === t[0] ? 'on' : '') + '" data-act="tab" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div><div id="adm"></div>';
     muatTab();
   }
@@ -492,6 +497,13 @@
         O.temaAsli = { k: c.TEMA || 'navy-emas', p: c.TEMA_PRIMER || '', a: c.TEMA_AKSEN || '' };
         O.temaPilih = Object.assign({}, O.temaAsli);
         renderTema();
+      } else if (tab === 'logo') {
+        var sl = await api('adm.setelan');
+        if (O.tab !== tab || !$('#adm')) return;
+        var cl = sl.setelan || {};
+        O.logoAsli = { b: cl.LOGO_BENTUK || 'lencana', i: cl.LOGO_IKON || 'gavel', g: cl.LOGO_GAMBAR || '' };
+        O.logoPilih = Object.assign({}, O.logoAsli);
+        renderLogo();
       } else if (tab === 'wa') {
         var w = await api('adm.waStatus'), q = await api('adm.waAntrean');
         if (O.tab !== tab || !$('#adm')) return;
@@ -536,6 +548,61 @@
       '</div>';
   }
 
+
+  // ---------- Logo ----------
+  function kembalikanLogo() {
+    if (O.logoAsli && O.logoPilih && JSON.stringify(O.logoAsli) !== JSON.stringify(O.logoPilih)) Tema.pasangLogo(O.logoAsli.b, O.logoAsli.i, O.logoAsli.g);
+    O.logoPilih = O.logoAsli ? Object.assign({}, O.logoAsli) : null;
+  }
+  function markLogo(b, i, g) {   // contoh logo mandiri (tidak ikut diubah otomatis)
+    return '<span class="brand-mark' + (g ? ' pakai-gambar' : '') + '" data-bentuk="' + b + '" data-contoh>' + (g ? '<img src="' + g + '" alt="">' : '<span class="ms fill">' + i + '</span>') + '</span>';
+  }
+  function renderLogo() {
+    var el = $('#adm'); if (!el || !O.logoPilih) return;
+    var L = O.logoPilih, nama = esc((O.boot && O.boot.cfg && O.boot.cfg.NAMA_INSTANSI) || 'Pengadilan Tata Usaha Negara');
+    var ubah = JSON.stringify(O.logoAsli) !== JSON.stringify(L);
+    var bentuk = Object.keys(Tema.bentuk).map(function (k) {
+      var on = L.b === k;
+      return '<button type="button" class="pil' + (on ? ' on' : '') + '" data-act="logoBentuk" data-k="' + k + '" aria-pressed="' + on + '">' + markLogo(k, L.i, L.g) + '<b>' + esc(Tema.bentuk[k].nama) + '</b><small>' + esc(Tema.bentuk[k].ket) + '</small></button>';
+    }).join('');
+    var ikon = Object.keys(Tema.ikon).map(function (k) {
+      var on = !L.g && L.i === k;
+      return '<button type="button" class="pil' + (on ? ' on' : '') + '" data-act="logoIkon" data-k="' + k + '" aria-pressed="' + on + '"><span class="ms fill">' + k + '</span><small>' + esc(Tema.ikon[k]) + '</small></button>';
+    }).join('');
+    el.innerHTML = '<div class="stack">' +
+      '<div class="card stack-s"><b>Pratinjau</b><div class="logo-pv">' +
+        '<div class="terang">' + markLogo(L.b, L.i, L.g) + '<div style="min-width:0"><b>' + nama + '</b><span class="t">E-KUASA</span></div></div>' +
+        '<div class="gelap">' + markLogo(L.b, L.i, L.g) + '<div style="min-width:0"><b>E-Kuasa</b><span class="t">DASHBOARD PETUGAS</span></div></div></div>' +
+        '<p class="small muted">Logo dipakai di header portal pemohon, sidebar dashboard, halaman login, dan ikon tab browser (bila memakai gambar).</p></div>' +
+      '<div class="card stack-s"><b>Bentuk logo</b><div class="pil-grid">' + bentuk + '</div></div>' +
+      '<div class="card stack-s"><b>Isi logo</b>' +
+        '<div class="unggah-logo"><span class="kotak-img">' + (L.g ? '<img src="' + L.g + '" alt="Logo unggahan">' : ic('add_photo_alternate')) + '</span>' +
+        '<div class="stack-s" style="flex:1;min-width:200px"><span class="small"><b>Gambar logo instansi</b> (PNG/JPG/WebP). Disarankan persegi dengan latar transparan. Gambar diperkecil otomatis.</span>' +
+        '<div class="row wrap-r"><label class="btn btn-o btn-s" style="cursor:pointer">' + ic('upload') + (L.g ? 'Ganti gambar' : 'Unggah gambar') + '<input type="file" hidden accept="image/png,image/jpeg,image/webp" data-logo-file></label>' +
+        (L.g ? '<button type="button" class="btn btn-t btn-s" data-act="logoHapusGambar">' + ic('delete') + 'Pakai ikon saja</button>' : '') + '</div></div></div>' +
+        '<span class="small muted">' + (L.g ? 'Ikon di bawah dipakai kembali bila gambar dihapus.' : 'Atau pilih ikon bawaan:') + '</span><div class="ikon-grid">' + ikon + '</div></div>' +
+      '<div class="row" style="justify-content:flex-end"><button type="button" class="btn btn-o ' + (ubah ? '' : 'off') + '" data-act="logoBatal">Batal</button><button type="button" class="btn btn-p ' + (ubah ? '' : 'off') + '" data-act="logoSimpan">' + ic('save') + 'Simpan Logo</button></div></div>';
+  }
+  function pratinjauLogo() { var L = O.logoPilih; Tema.pasangLogo(L.b, L.i, L.g); renderLogo(); }
+  // Perkecil gambar ke maks 192px; PNG dulu, WebP bila masih terlalu besar
+  function kecilkanLogo(file) {
+    return new Promise(function (res, rej) {
+      if (!/^image\/(png|jpeg|webp)$/.test(file.type)) return rej(new Error('Gunakan gambar PNG, JPG, atau WebP.'));
+      if (file.size > 8 * 1024 * 1024) return rej(new Error('Gambar terlalu besar (maks 8 MB).'));
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var s = Math.min(1, 192 / Math.max(img.width, img.height)), w = Math.max(1, Math.round(img.width * s)), h = Math.max(1, Math.round(img.height * s));
+        var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        var cx = cv.getContext('2d'); cx.imageSmoothingQuality = 'high'; cx.drawImage(img, 0, 0, w, h); URL.revokeObjectURL(url);
+        var hasil = cv.toDataURL('image/png');
+        [0.9, 0.8, 0.65].forEach(function (q) { if (hasil.length > 58000) { var wbp = cv.toDataURL('image/webp', q); if (/^data:image\/webp/.test(wbp)) hasil = wbp; } });
+        if (hasil.length > 58000) return rej(new Error('Gambar terlalu rumit untuk dijadikan logo. Coba gambar yang lebih sederhana.'));
+        res(hasil);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('Gambar tidak bisa dibaca.')); };
+      img.src = url;
+    });
+  }
 
   // ---------- Tema warna ----------
   function kembalikanTema() {   // keluar dari tab tanpa menyimpan: pulihkan tema tersimpan
@@ -724,6 +791,20 @@
         try { localStorage.removeItem('ek:boot'); } catch (x) { /* abaikan */ }
         UI.toast('Tema tersimpan. Portal pemohon memakai tema baru saat dibuka ulang.', 'ok'); renderTema();
       } catch (err) { kembalikanTema(); renderTema(); UI.toast(err.message, 'err'); }
+    }
+    else if (a === 'logoBentuk') { O.logoPilih.b = t.dataset.k; pratinjauLogo(); }
+    else if (a === 'logoIkon') { O.logoPilih.i = t.dataset.k; O.logoPilih.g = ''; pratinjauLogo(); }
+    else if (a === 'logoHapusGambar') { O.logoPilih.g = ''; pratinjauLogo(); }
+    else if (a === 'logoBatal') { kembalikanLogo(); renderLogo(); }
+    else if (a === 'logoSimpan') {
+      var lp = O.logoPilih; UI.busy(t, true, 'Menyimpan...');
+      try {
+        var hl = await api('adm.setelanSimpan', { setelan: { LOGO_BENTUK: lp.b, LOGO_IKON: lp.i, LOGO_GAMBAR: lp.g } });
+        if (!hl || !hl.tersimpan || hl.tersimpan.indexOf('LOGO_BENTUK') < 0) throw new Error('Server belum mendukung pengaturan logo. Timpa Kode.gs di Apps Script, lalu Deploy > Kelola deployment > Edit > Versi baru.');
+        O.logoAsli = Object.assign({}, lp);
+        try { var tm = JSON.parse(localStorage.getItem('ek_tema') || '{}'); tm.lb = lp.b; tm.li = lp.i; tm.lg = lp.g; localStorage.setItem('ek_tema', JSON.stringify(tm)); localStorage.removeItem('ek:boot'); } catch (x) { /* abaikan */ }
+        UI.toast('Logo tersimpan. Portal pemohon memakai logo baru saat dibuka ulang.', 'ok'); renderLogo();
+      } catch (err) { kembalikanLogo(); renderLogo(); UI.toast(err.message, 'err'); }
     }
     else if (a === 'waMuat') muatTab();
     else if (a === 'waUlang') { UI.busy(t, true); try { var u = await api('adm.waUlang'); UI.toast(u.ulang + ' pesan diantrekan ulang.', 'ok'); muatTab(); } catch (err) { UI.toast(err.message, 'err'); UI.busy(t, false); } }
