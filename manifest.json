@@ -1,0 +1,24 @@
+{
+  "id": "./index.html",
+  "name": "E-Kuasa — Pendaftaran Surat Kuasa Online",
+  "short_name": "E-Kuasa",
+  "description": "Daftar dan legalisasi surat kuasa secara daring: unggah berkas, bayar PNBP, dan pantau status.",
+  "lang": "id",
+  "start_url": "./index.html?sumber=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F8FA",
+  "theme_color": "#0B2545",
+  "categories": ["government", "productivity"],
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Daftar Surat Kuasa", "short_name": "Daftar", "url": "./index.html#/daftar", "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Cek Status", "short_name": "Cek Status", "url": "./index.html#/status", "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
