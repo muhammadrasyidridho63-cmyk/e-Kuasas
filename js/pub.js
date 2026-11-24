@@ -11,10 +11,12 @@
   var BOLEH_UBAH = ['Menunggu Berkas', 'Menunggu Pembayaran', 'Perlu Perbaikan'];
   var JENIS_BAYAR = 'Bukti Bayar PNBP';
 
-  // ---------- Draft pendaftaran (agar bisa dilanjutkan setelah refresh) ----------
-  function draft() { try { return JSON.parse(localStorage.getItem('ek_draft') || 'null'); } catch (e) { return null; } }
-  function simpanDraft(d) { try { localStorage.setItem('ek_draft', JSON.stringify(d)); } catch (e) { /* abaikan */ } }
-  function hapusDraft() { try { localStorage.removeItem('ek_draft'); } catch (e) { /* abaikan */ } }
+  // ---------- Pendaftaran yang belum lengkap TIDAK disimpan: selalu mulai dari awal ----------
+  // (draf lama dari versi sebelumnya dibersihkan sekali)
+  try { localStorage.removeItem('ek_draft'); } catch (e) { /* abaikan */ }
+  function draft() { return null; }
+  function simpanDraft() { /* sengaja tidak menyimpan */ }
+  function hapusDraft() { /* tidak ada draf */ }
 
   function syaratOf(kode) { return S.master.filter(function (m) { return m.kode === kode; }); }
   function kelompokNama(kode) { var m = syaratOf(kode)[0]; return m ? m.kelompok : (UI.KEL[kode] || {}).nama || kode; }
@@ -53,8 +55,12 @@
     if (['beranda', 'daftar', 'status'].indexOf(n) < 0) n = 'beranda';
     return { n: n, p: decodeURIComponent(h[1] || '') };
   }
+  var ruteLalu = '';
   function tampil() {
     var r = rute();
+    // Masuk ke halaman pendaftaran dari halaman lain = mulai dari langkah 1 dengan data kosong
+    if (r.n === 'daftar' && ruteLalu !== 'daftar') resetWizard();
+    ruteLalu = r.n;
     UI.$$('.nav a,.tabbar a').forEach(function (a) { a.classList.toggle('on', a.dataset.r === r.n); });
     if (r.n === 'beranda') V.innerHTML = berandaHTML();
     else if (r.n === 'daftar') V.innerHTML = daftarHTML(r.p);
@@ -334,6 +340,10 @@
       catch (err) { UI.toast(err.message, 'err'); }
       UI.busy(t, false);
     }
+  });
+
+  window.addEventListener('beforeunload', function (e) {
+    if (rute().n === 'daftar' && W.step > 1 && W.step < 5) { e.preventDefault(); e.returnValue = ''; }
   });
 
   async function lanjutDraft(btn) {
