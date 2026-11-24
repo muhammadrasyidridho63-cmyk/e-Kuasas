@@ -76,7 +76,7 @@
     }).join('');
     var d = draft();
     var lanjut = d ? '<div class="banner info" style="margin-bottom:16px">' + ic('edit_note') + '<div class="grow"><b>Ada pendaftaran yang belum selesai</b> (' + esc(d.id) + ').</div><a class="btn btn-s btn-p" href="#/daftar">Lanjutkan</a></div>' : '';
-    var steps = [['category', 'Pilih Kuasa', 'Tentukan kelompok: ADV, INS, atau INC.'], ['edit_note', 'Isi Formulir', 'Lengkapi identitas, nomor kontak, dan email aktif.'], ['upload_file', 'Unggah Berkas', 'Scan dokumen (PDF/JPG/PNG, maks 2 MB per berkas).'], ['paid', 'Bayar PNBP ' + UI.rp(c.NOMINAL_PNBP), 'Transfer, lalu unggah bukti pembayaran.'], ['verified_user', 'Terlegalisasi', 'Setelah diverifikasi, unduh dokumen yang sudah dilegalisasi.']]
+    var steps = [['category', 'Pilih Kuasa', 'Tentukan kelompok: ADV, INS, atau INC.'], ['edit_note', 'Isi Formulir', 'Lengkapi identitas, nomor kontak, dan email aktif.'], ['upload_file', 'Unggah Berkas', 'Scan dokumen (PDF/JPG/PNG, maks 2 MB per berkas).'], ['paid', 'Bayar PNBP', 'Transfer, lalu unggah bukti pembayaran.'], ['verified_user', 'Terlegalisasi', 'Setelah diverifikasi, unduh dokumen yang sudah dilegalisasi.']]
       .map(function (s, i) { return '<div class="step-c"><div class="row between" style="margin-bottom:10px"><span class="num">' + (i + 1) + '</span>' + ic(s[0]) + '</div><h4 style="font-size:16px">' + esc(s[1]) + '</h4><p class="muted small" style="margin-top:4px">' + esc(s[2]) + '</p></div>'; }).join('');
     return '<section class="hero"><div class="wrap"><div class="hero-grid"><div>' +
       '<span class="pill" style="background:#fff;border:1px solid var(--border);color:var(--text)"><span class="dot" style="color:var(--ok)"></span>Layanan daring ' + esc(c.NAMA_INSTANSI) + '</span>' +
