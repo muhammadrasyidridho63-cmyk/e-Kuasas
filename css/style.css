@@ -309,3 +309,11 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}
 @media(max-width:380px){.lgn-copy p{display:none}}
 @media(prefers-reduced-motion:reduce){.lgn-copy.in h2,.lgn-copy.in p{animation:none}}
 .lgn-eye,.lgn-back,.lgn-mark{overflow:hidden}
+
+/* Form akun petugas */
+.akun-box{display:grid;gap:10px;border:1px dashed var(--border);border-radius:var(--rc);padding:12px;background:var(--bg)}
+.akun-box>.tiny{margin-top:-6px;line-height:1.45}
+.pw-wrap{position:relative;display:block}.pw-wrap .input{padding-right:44px;width:100%}
+.pw-eye{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;background:none;border-radius:8px;color:var(--text2);display:grid;place-items:center;overflow:hidden}
+.pw-eye:hover{background:var(--navy-l);color:var(--navy)}
+.modal .sheet{max-height:calc(100dvh - 32px);overflow:auto}

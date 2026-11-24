@@ -67,20 +67,21 @@
 
   function renderLogin() {
     var b = O.boot || {};
-    var sig = JSON.stringify([b.googleClientId, b.darurat, (b.cfg || {}).NAMA_INSTANSI]);
+    var sig = JSON.stringify([b.googleClientId, b.darurat, b.sandi, (b.cfg || {}).NAMA_INSTANSI]);
     if (sig === O.loginSig && $('.lgn')) return;
     O.loginSig = sig;
     var inst = (b.cfg && b.cfg.NAMA_INSTANSI) || 'Pengadilan Tata Usaha Negara';
-    var form = b.darurat ? '<form id="fdar" class="lgn-form" autocomplete="on">' +
+    var adaForm = b.darurat || b.sandi;
+    var form = adaForm ? '<form id="fdar" class="lgn-form" autocomplete="on">' +
       '<label class="lgn-f"><span>Nama pengguna</span><input class="input" name="user" autocomplete="username" placeholder="Masukkan nama pengguna" required></label>' +
       '<label class="lgn-f"><span>Sandi</span><span class="lgn-pw"><input class="input" type="password" name="pass" id="lgPass" autocomplete="current-password" placeholder="Masukkan sandi" required>' +
       '<button type="button" class="lgn-eye" id="lgEye" aria-label="Tampilkan sandi" aria-pressed="false">' + ic('visibility') + '</button></span></label>' +
-      '<div class="lgn-row"><span class="lgn-muted">' + ic('shield_lock') + 'Akses darurat admin</span><button type="button" class="lgn-link" id="lgLupa" aria-expanded="false">Lupa sandi?</button></div>' +
-      '<p class="lgn-note" id="lgNote" hidden>Sandi darurat dibuat ulang oleh pemilik Apps Script dengan menjalankan fungsi <b>resetAksesDarurat</b>. Sandi baru muncul di Log eksekusi.</p>' +
+      '<div class="lgn-row"><span class="lgn-muted">' + ic('shield_lock') + 'Sesi aman 12 jam</span><button type="button" class="lgn-link" id="lgLupa" aria-expanded="false">Lupa sandi?</button></div>' +
+      '<p class="lgn-note" id="lgNote" hidden>Hubungi Admin untuk mengatur ulang sandi Anda (menu Admin &rsaquo; Petugas &rsaquo; Ubah). Sandi akses darurat dibuat ulang oleh pemilik Apps Script lewat fungsi <b>resetAksesDarurat</b>.</p>' +
       '<button class="lgn-btn">Masuk</button></form>' : '';
     var google = b.googleClientId ? '<div id="gbtn" class="lgn-g"></div>' :
-      '<div class="banner" style="margin:0">' + ic('info') + '<div class="small">Login Google belum dikonfigurasi (GOOGLE_CLIENT_ID).' + (b.darurat ? ' Gunakan akses darurat di atas.' : '') + '</div></div>';
-    var pemisah = b.darurat ? '<div class="lgn-or"><span>atau lanjutkan dengan</span></div>' : '';
+      (adaForm ? '' : '<div class="banner" style="margin:0">' + ic('info') + '<div class="small">Belum ada cara masuk yang aktif. Isi GOOGLE_CLIENT_ID atau jalankan resetAksesDarurat di Apps Script.</div></div>');
+    var pemisah = adaForm && b.googleClientId ? '<div class="lgn-or"><span>atau lanjutkan dengan</span></div>' : '';
     APP.innerHTML = '<div class="lgn">' +
       '<section class="lgn-hero">' + FASAD +
         '<div class="lgn-top"><a class="lgn-brand" href="index.html"><span class="lgn-mark">' + ic('gavel', 'fill') + '</span><span>E-Kuasa<small>' + esc(inst) + '</small></span></a>' +
@@ -160,8 +161,8 @@
     var nav = m.map(function (x) { return '<a href="' + x[3] + '" data-r="' + x[0] + '">' + ic(x[1]) + '<span>' + x[2] + '</span></a>'; }).join('');
     var tab = m.map(function (x) { return '<a href="' + x[3] + '" data-r="' + x[0] + '">' + ic(x[1]) + (x[2] === 'Antrean Verifikasi' ? 'Antrean' : x[2]) + '</a>'; }).join('');
     APP.innerHTML = '<div class="shell"><aside class="side"><a class="brand" href="#/"><span class="brand-mark">' + ic('gavel', 'fill') + '</span><span class="brand-t"><b>E-Kuasa</b><span>Dashboard Petugas</span></span></a><nav>' + nav + '</nav>' +
-      '<div class="me"><span class="ico" style="background:var(--navy)">' + ic('person') + '</span><div class="grow"><b>' + esc(O.user.nama || 'Petugas') + '</b><span>' + esc(O.user.peran) + ' &middot; ' + esc(O.user.email) + '</span></div><button data-act="keluar" title="Keluar" aria-label="Keluar">' + ic('logout') + '</button></div></aside>' +
-      '<div class="main"><header class="bar-top"><div class="row"><span class="brand-mark mob-only">' + ic('gavel', 'fill') + '</span><b id="judul" style="color:var(--navy)"></b></div><div class="row"><span id="sync" class="tiny muted"></span><button class="btn btn-t btn-s" data-act="muat" aria-label="Muat ulang data">' + ic('refresh') + '</button><button class="btn btn-t btn-s mob-only" data-act="keluar" aria-label="Keluar">' + ic('logout') + '</button></div></header>' +
+      '<div class="me"><span class="ico" style="background:var(--navy)">' + ic('person') + '</span><div class="grow"><b>' + esc(O.user.nama || 'Petugas') + '</b><span>' + esc(O.user.peran) + ' &middot; ' + esc(O.user.email) + '</span></div>' + (O.user.username ? '<button data-act="gantiSandi" title="Ganti sandi" aria-label="Ganti sandi">' + ic('key') + '</button>' : '') + '<button data-act="keluar" title="Keluar" aria-label="Keluar">' + ic('logout') + '</button></div></aside>' +
+      '<div class="main"><header class="bar-top"><div class="row"><span class="brand-mark mob-only">' + ic('gavel', 'fill') + '</span><b id="judul" style="color:var(--navy)"></b></div><div class="row"><span id="sync" class="tiny muted"></span><button class="btn btn-t btn-s" data-act="muat" aria-label="Muat ulang data">' + ic('refresh') + '</button>' + (O.user.username ? '<button class="btn btn-t btn-s mob-only" data-act="gantiSandi" aria-label="Ganti sandi">' + ic('key') + '</button>' : '') + '<button class="btn btn-t btn-s mob-only" data-act="keluar" aria-label="Keluar">' + ic('logout') + '</button></div></header>' +
       '<div class="content" id="v"></div></div><nav class="tabbar off-tab">' + tab + '</nav></div>';
     $('.shell').addEventListener('click', klik);
     $('#v').addEventListener('input', onInput);
@@ -482,8 +483,8 @@
       if (tab === 'petugas') {
         var r = await api('adm.petugas');
         if (O.tab !== tab || !$('#adm')) return;
-        el.innerHTML = '<div class="stack"><div class="row between"><p class="muted small">Hanya akun Google yang terdaftar dan aktif di sini yang dapat masuk.</p><button class="btn btn-p btn-s" data-act="petugasBaru">' + ic('person_add') + 'Tambah Petugas</button></div><div class="tbl-wrap"><div class="tbl-scroll"><table class="t stack"><thead><tr><th>Email</th><th>Nama</th><th>Peran</th><th>Aktif</th><th></th></tr></thead><tbody>' +
-          r.rows.map(function (p) { return '<tr><td data-l="Email">' + esc(p.email) + '</td><td data-l="Nama">' + esc(p.nama) + '</td><td data-l="Peran"><span class="pill ' + (p.peran === 'Admin' ? 'gold' : '') + '">' + esc(p.peran) + '</span></td><td data-l="Aktif">' + (p.aktif === 'Ya' ? '<span class="pill ok">Aktif</span>' : '<span class="pill gray">Nonaktif</span>') + '</td><td data-l="Aksi" style="text-align:right"><button class="btn btn-o btn-s" data-act="petugasUbah" data-e="' + esc(p.email) + '" data-n="' + esc(p.nama) + '" data-p="' + esc(p.peran) + '" data-a="' + esc(p.aktif) + '">Ubah</button></td></tr>'; }).join('') + '</tbody></table></div></div></div>';
+        el.innerHTML = '<div class="stack"><div class="row between"><p class="muted small">Petugas aktif dapat masuk dengan akun Google (email) atau username &amp; sandi.</p><button class="btn btn-p btn-s" data-act="petugasBaru">' + ic('person_add') + 'Tambah Petugas</button></div><div class="tbl-wrap"><div class="tbl-scroll"><table class="t stack"><thead><tr><th>Email</th><th>Nama</th><th>Username</th><th>Peran</th><th>Aktif</th><th></th></tr></thead><tbody>' +
+          r.rows.map(function (p) { return '<tr><td data-l="Email">' + esc(p.email) + '</td><td data-l="Nama">' + esc(p.nama) + '</td><td data-l="Username">' + (p.username ? '<span class="chip">' + esc(p.username) + '</span>' : '<span class="muted small">Google saja</span>') + '</td><td data-l="Peran"><span class="pill ' + (p.peran === 'Admin' ? 'gold' : '') + '">' + esc(p.peran) + '</span></td><td data-l="Aktif">' + (p.aktif === 'Ya' ? '<span class="pill ok">Aktif</span>' : '<span class="pill gray">Nonaktif</span>') + '</td><td data-l="Aksi" style="text-align:right"><button class="btn btn-o btn-s" data-act="petugasUbah" data-e="' + esc(p.email) + '" data-n="' + esc(p.nama) + '" data-p="' + esc(p.peran) + '" data-a="' + esc(p.aktif) + '" data-u="' + esc(p.username || '') + '">Ubah</button></td></tr>'; }).join('') + '</tbody></table></div></div></div>';
       } else if (tab === 'tema') {
         var st = await api('adm.setelan');
         if (O.tab !== tab || !$('#adm')) return;
@@ -568,23 +569,71 @@
   }
   function pratinjauTema() { var t = O.temaPilih; Tema.pasang(t.k, t.p, t.a); renderTema(); }
 
+  function sandiAcak() {
+    var h = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz', n = '23456789', s = '', a = new Uint32Array(12);
+    crypto.getRandomValues(a);
+    for (var i = 0; i < 12; i++) s += (i % 4 === 3 ? n : h)[a[i] % (i % 4 === 3 ? n.length : h.length)];
+    return s;
+  }
+  function kolomSandi(nama, label, ph, acak, ac) {
+    return '<label class="field"><span>' + label + '</span><span class="pw-wrap"><input class="input" type="password" name="' + nama + '" autocomplete="' + (ac || 'new-password') + '" placeholder="' + esc(ph) + '" maxlength="100">' +
+      '<button type="button" class="pw-eye" data-pw aria-label="Tampilkan sandi">' + ic('visibility') + '</button></span>' +
+      (acak ? '<span class="row" style="justify-content:space-between;margin-top:4px"><small class="muted">Min. 8 karakter, huruf &amp; angka.</small><button type="button" class="btn btn-t btn-s" data-acak>' + ic('casino') + 'Buat acak</button></span>' : '') + '</label>';
+  }
+  function pasangMata(root) {
+    root.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-pw]');
+      if (b) { var inp = b.parentNode.querySelector('input'), l = inp.type === 'password'; inp.type = l ? 'text' : 'password'; b.innerHTML = ic(l ? 'visibility_off' : 'visibility'); b.setAttribute('aria-label', l ? 'Sembunyikan sandi' : 'Tampilkan sandi'); return; }
+      var g = e.target.closest('[data-acak]');
+      if (g) { var s = g.closest('form').sandi; s.value = sandiAcak(); s.type = 'text'; s.parentNode.querySelector('[data-pw]').innerHTML = ic('visibility_off'); s.select(); UI.toast('Sandi acak dibuat. Catat dan berikan ke petugas.', ''); }
+    });
+  }
   function modalPetugas(p) {
     var m = document.createElement('div'); m.className = 'modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
-    m.innerHTML = '<form class="sheet stack"><h3>' + (p ? 'Ubah petugas' : 'Tambah petugas') + '</h3>' +
-      '<label class="field"><span>Email akun Google</span><input class="input" type="email" name="email" value="' + esc(p ? p.e : '') + '" ' + (p ? 'readonly' : '') + ' required></label>' +
+    var unAda = p && p.u;
+    m.innerHTML = '<form class="sheet stack" autocomplete="off"><h3>' + (p ? 'Ubah petugas' : 'Tambah petugas') + '</h3>' +
+      '<label class="field"><span>Email</span><input class="input" type="email" name="email" value="' + esc(p ? p.e : '') + '" ' + (p ? 'readonly' : '') + ' required placeholder="nama@contoh.go.id"><small class="muted">Dipakai untuk login Google dan sebagai identitas petugas.</small></label>' +
       '<label class="field"><span>Nama</span><input class="input" name="nama" value="' + esc(p ? p.n : '') + '" maxlength="100"></label>' +
       '<div class="grid g2" style="gap:12px"><label class="field"><span>Peran</span><select class="input" name="peran"><option ' + (p && p.p === 'Petugas' ? 'selected' : '') + '>Petugas</option><option ' + (p && p.p === 'Admin' ? 'selected' : '') + '>Admin</option></select></label>' +
       '<label class="field"><span>Status</span><select class="input" name="aktif"><option value="Ya" ' + (!p || p.a === 'Ya' ? 'selected' : '') + '>Aktif</option><option value="Tidak" ' + (p && p.a === 'Tidak' ? 'selected' : '') + '>Nonaktif</option></select></label></div>' +
+      '<div class="akun-box"><b class="small">Login dengan username &amp; sandi</b><span class="tiny muted">Opsional. Kosongkan username bila petugas hanya masuk dengan Google.' + (unAda ? ' Hapus username untuk mencabut login sandi.' : '') + '</span>' +
+      '<div class="grid g2" style="gap:12px"><label class="field"><span>Username</span><input class="input" name="username" value="' + esc(unAda || '') + '" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="30" placeholder="mis. budi.s"></label>' +
+      kolomSandi('sandi', unAda ? 'Sandi baru' : 'Sandi', unAda ? 'Kosongkan bila tidak diubah' : 'Minimal 8 karakter', true) + '</div></div>' +
       '<div class="row" style="justify-content:flex-end"><button type="button" class="btn btn-o" data-n>Batal</button><button class="btn btn-p">Simpan</button></div></form>';
     document.body.appendChild(m);
+    pasangMata(m);
+    var f = m.querySelector('form');
+    f.username.addEventListener('input', function () { var v = f.username.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''); if (v !== f.username.value) f.username.value = v; });
     m.addEventListener('click', function (e) { if (e.target === m || e.target.hasAttribute('data-n')) m.remove(); });
-    m.querySelector('form').addEventListener('submit', async function (e) {
+    f.addEventListener('submit', async function (e) {
       e.preventDefault();
-      var f = e.target, btn = f.querySelector('.btn-p'); UI.busy(btn, true);
+      var btn = f.querySelector('.btn-p'), un = f.username.value.trim(), sd = f.sandi.value;
+      if (un && !/^[a-z0-9][a-z0-9._-]{2,29}$/.test(un)) { UI.toast('Username 3-30 karakter: huruf kecil, angka, titik, _ atau -.', 'warn'); f.username.focus(); return; }
+      if (un && un !== unAda && !unAda && !sd) { UI.toast('Isi sandi untuk username baru.', 'warn'); f.sandi.focus(); return; }
+      if (sd && (sd.length < 8 || !/[A-Za-z]/.test(sd) || !/\d/.test(sd))) { UI.toast('Sandi minimal 8 karakter dan berisi huruf serta angka.', 'warn'); f.sandi.focus(); return; }
+      if (unAda && !un && !await UI.confirm('Cabut login sandi?', 'Petugas ini tidak bisa lagi masuk dengan username & sandi.', 'Cabut', true)) return;
+      UI.busy(btn, true);
       try {
-        await api('adm.petugasSimpan', { email: f.email.value, nama: f.nama.value, peran: f.peran.value, aktif: f.aktif.value });
-        m.remove(); UI.toast('Petugas tersimpan.', 'ok'); muatTab();
+        await api('adm.petugasSimpan', { email: f.email.value, nama: f.nama.value, peran: f.peran.value, aktif: f.aktif.value, username: un, sandi: sd });
+        m.remove(); try { localStorage.removeItem('ek:boot'); } catch (x) { /* abaikan */ }
+        UI.toast(sd ? 'Petugas tersimpan. Berikan username & sandi kepada petugas secara langsung.' : 'Petugas tersimpan.', 'ok'); muatTab();
       } catch (err) { UI.toast(err.message, 'err'); UI.busy(btn, false); }
+    });
+  }
+  function modalGantiSandi() {
+    var m = document.createElement('div'); m.className = 'modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
+    m.innerHTML = '<form class="sheet stack" autocomplete="off"><h3>Ganti sandi</h3><p class="small muted">Username: <b>' + esc(O.user.username) + '</b></p>' +
+      kolomSandi('lama', 'Sandi lama', '', false, 'current-password') + kolomSandi('baru', 'Sandi baru', 'Minimal 8 karakter, huruf & angka', false) + kolomSandi('ulang', 'Ulangi sandi baru', '', false) +
+      '<div class="row" style="justify-content:flex-end"><button type="button" class="btn btn-o" data-n>Batal</button><button class="btn btn-p">Simpan sandi</button></div></form>';
+    document.body.appendChild(m); pasangMata(m);
+    var f = m.querySelector('form'); f.lama.focus();
+    m.addEventListener('click', function (e) { if (e.target === m || e.target.hasAttribute('data-n')) m.remove(); });
+    f.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      if (f.baru.value !== f.ulang.value) { UI.toast('Ulangan sandi baru tidak sama.', 'warn'); f.ulang.focus(); return; }
+      var btn = f.querySelector('.btn-p'); UI.busy(btn, true);
+      try { await api('auth.gantiSandi', { lama: f.lama.value, baru: f.baru.value }); m.remove(); UI.toast('Sandi berhasil diganti.', 'ok'); }
+      catch (err) { UI.toast(err.message, 'err'); UI.busy(btn, false); }
     });
   }
 
@@ -680,7 +729,8 @@
     else if (a === 'waUlang') { UI.busy(t, true); try { var u = await api('adm.waUlang'); UI.toast(u.ulang + ' pesan diantrekan ulang.', 'ok'); muatTab(); } catch (err) { UI.toast(err.message, 'err'); UI.busy(t, false); } }
     else if (a === 'waHapusToken') { if (await UI.confirm('Hapus token Fonnte?', 'Notifikasi WhatsApp berhenti sampai token baru disimpan.', 'Hapus token', true)) { try { await api('adm.waToken', { token: '__HAPUS__' }); UI.toast('Token dihapus.', 'ok'); muatTab(); } catch (err) { UI.toast(err.message, 'err'); } } }
     else if (a === 'petugasBaru') modalPetugas(null);
-    else if (a === 'petugasUbah') modalPetugas({ e: t.dataset.e, n: t.dataset.n, p: t.dataset.p, a: t.dataset.a });
+    else if (a === 'petugasUbah') modalPetugas({ e: t.dataset.e, n: t.dataset.n, p: t.dataset.p, a: t.dataset.a, u: t.dataset.u });
+    else if (a === 'gantiSandi') modalGantiSandi();
   }
 
   // Prefetch detail saat kursor/jari menyentuh baris agar terbuka seketika
