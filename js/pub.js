@@ -150,7 +150,7 @@
       fld('namaPenerima', peneLabel, 'text', 'Nama lengkap beserta gelar', '', 'maxlength="160"') +
       fld('kontak', 'Nomor WhatsApp / Telepon', 'tel', '08xxxxxxxxxx', 'Untuk notifikasi status (WhatsApp bila diaktifkan) dan bila petugas perlu menghubungi Anda. Gunakan nomor seluler aktif.', 'inputmode="tel" autocomplete="tel" maxlength="20"') +
       fld('email', 'Alamat Email Aktif', 'email', 'nama@email.com', 'ID Registrasi dan Kode Akses akan dikirim ke email ini.', 'inputmode="email" autocomplete="email" maxlength="120"') +
-      '<input class="sr" name="hp" tabindex="-1" autocomplete="off" aria-hidden="true">' +
+      '<input class="sr" type="text" name="ek_cek_x9" id="ek_cek_x9" tabindex="-1" autocomplete="new-password" data-lpignore="true" data-1p-ignore aria-hidden="true">' +
       '<div class="wiz-act"><button type="button" class="btn btn-o" data-act="step2Balik">' + ic('arrow_back') + 'Kembali</button><span class="grow"></span><button class="btn btn-p" type="submit">Lanjut ' + ic('arrow_forward') + '</button></div></form>';
   }
 
@@ -368,7 +368,7 @@
       if (ada.length) { var el = f[ada[0]]; if (el) el.focus(); return; }
       UI.busy(btn, true, 'Mendaftarkan...');
       try {
-        var r = await Api.call('reg.buat', { kode: W.kode, namaPemohon: vals.namaPemohon, namaPenerima: vals.namaPenerima, kontak: vals.kontak, email: vals.email, hp: f.hp.value });
+        var r = await Api.call('reg.buat', { kode: W.kode, namaPemohon: vals.namaPemohon, namaPenerima: vals.namaPenerima, kontak: vals.kontak, email: vals.email, hp: f.ek_cek_x9.value });
         W.id = r.id; W.akses = r.akses; W.status = r.status; W.berkas = []; W.step = 3;
         simpanDraft({ id: r.id, akses: r.akses, kode: W.kode });
         try { localStorage.setItem('ek_lastid', r.id); } catch (e2) { /* abaikan */ }
