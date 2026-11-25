@@ -388,3 +388,82 @@ body.has-tabbar .foot-bawah{padding-bottom:calc(20px + env(safe-area-inset-botto
 .tautan-ed .aksi button[disabled]{opacity:.35;pointer-events:none}
 @media(max-width:640px){.tautan-ed .baris{grid-template-columns:minmax(0,1fr);padding:10px;border:1px solid var(--border);border-radius:10px}.tautan-ed .aksi{justify-content:flex-end}}
 .grid>*{min-width:0}
+
+/* ===== PWA ===== */
+[data-pasang]{display:none!important}
+html.bisa-pasang:not(.pwa) [data-pasang]{display:inline-flex!important}
+.pasang-btn{white-space:nowrap}
+@media(max-width:560px){.pasang-btn span:not(.ms){display:none}.pasang-btn{padding:0 10px}}
+.lgn-pasang{align-items:center;justify-content:center;gap:8px;height:44px;border-radius:999px;border:1px dashed var(--border);background:var(--bg);color:var(--text);font-weight:600;font-size:13.5px}
+.lgn-pasang:hover{border-color:var(--navy);color:var(--navy)}
+.pasang-ios{display:grid;gap:10px;padding-left:20px;font-size:14px;line-height:1.5}
+.pasang-ios .ms{font-size:18px;vertical-align:-4px;color:var(--navy)}
+.pwa-offline{position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));z-index:120;display:flex;align-items:center;gap:8px;background:#1f2937;color:#fff;font-size:13px;font-weight:600;padding:8px 14px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100% - 24px)}
+.pwa-offline .ms{font-size:18px;color:#fbbf24}
+.pwa-baru{position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:110;margin:0 auto;max-width:460px;display:flex;align-items:center;gap:10px;background:var(--navy-d);color:#fff;padding:10px 10px 10px 14px;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.3);font-size:14px;font-weight:600}
+.pwa-baru>.ms{color:var(--gold)}.pwa-baru .tutup{border:0;background:none;color:rgba(255,255,255,.7);width:34px;height:34px;display:grid;place-items:center;border-radius:8px;overflow:hidden}
+@media(min-width:900px){.pwa-baru{bottom:20px}}
+/* Mode aplikasi (layar penuh): beri ruang untuk status bar HP */
+.pwa .top{padding-top:env(safe-area-inset-top,0px)}
+.pwa .bar-top{padding-top:env(safe-area-inset-top,0px);height:calc(60px + env(safe-area-inset-top,0px))}
+.pwa .side{padding-top:env(safe-area-inset-top,0px)}
+.pwa .lgn-hero{padding-top:calc(20px + env(safe-area-inset-top,0px))}
+.pwa body{overscroll-behavior-y:none}
+@media(max-width:420px){.top .btn-p.btn-s>span:not(.ms){display:none}.top .btn-p.btn-s{padding:0 10px}}
+
+/* ===== Login petugas: latar penuh + form pil di tengah ===== */
+.lgx{position:relative;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;color:#fff;overflow:hidden;isolation:isolate;background:var(--navy-d)}
+.lgx-bg{position:absolute;inset:-24px;z-index:-2}
+.lgx-bg .lgn-bg{width:100%;height:100%;filter:blur(3px) saturate(1.05);transform:scale(1.04)}
+.lgx::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse at 50% 42%,rgba(var(--shc),.38),rgba(var(--shc),.78) 70%),linear-gradient(180deg,rgba(0,0,0,.18),rgba(0,0,0,.45))}
+.lgx-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px clamp(18px,4vw,44px);padding-top:calc(22px + env(safe-area-inset-top,0px))}
+.lgx-brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-weight:700;font-size:16px;line-height:1.15;min-width:0}
+.lgx-brand small{display:block;font-size:10.5px;font-weight:600;color:var(--gold-on);letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw}
+.lgx-brand .brand-mark{width:34px;height:34px;flex:none}
+.lgx-nav nav{display:flex;align-items:center;gap:6px}
+.lgx-link{color:rgba(255,255,255,.88);text-decoration:none;font-size:14px;font-weight:500;padding:8px 12px;border-radius:999px;transition:background .15s}
+.lgx-link:hover{background:rgba(255,255,255,.1);color:#fff}
+.lgx-ikon{width:38px;height:38px;border-radius:50%;border:0;background:transparent;color:#fff;place-items:center;overflow:hidden}
+.lgx-ikon:hover{background:rgba(255,255,255,.12)}
+html.bisa-pasang:not(.pwa) .lgx-ikon[data-pasang]{display:grid!important}
+.lgx-pill{margin-left:8px;background:#fff;color:var(--navy-d);text-decoration:none;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:11px 20px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.18);transition:transform .15s}
+.lgx-pill:hover{transform:translateY(-1px)}
+.lgx-main{flex:1;display:grid;place-items:center;padding:24px 20px}
+.lgx-box{width:100%;max-width:330px;display:grid;justify-items:center;gap:14px;text-align:center;animation:lgxIn .5s ease both}
+@keyframes lgxIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.lgx-logo{width:64px;height:64px;margin-bottom:2px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.lgx-logo .ms{font-size:32px}
+.lgx-box h1{font-size:26px;font-weight:600;letter-spacing:-.01em;color:#fff;margin-top:2px}
+.lgx-sub{font-size:13px;color:rgba(255,255,255,.72);margin-top:-8px}
+.lgx-form{width:100%;display:grid;gap:14px;margin-top:10px}
+.lgx-f{position:relative;display:block}
+.lgx-f input{width:100%;height:46px;border-radius:999px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.08);color:#fff;font-size:14px;padding:0 50px 0 20px;outline:none;transition:border-color .15s,background .15s,box-shadow .15s;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.lgx-f input::placeholder{color:rgba(255,255,255,.78)}
+.lgx-f input:focus{border-color:#fff;background:rgba(255,255,255,.14);box-shadow:0 0 0 3px rgba(255,255,255,.16)}
+.lgx-f input:-webkit-autofill{-webkit-text-fill-color:#fff;-webkit-box-shadow:0 0 0 40px rgba(var(--shc),.9) inset;caret-color:#fff}
+.lgx-ic{position:absolute;right:6px;top:5px;width:36px;height:36px;display:grid;place-items:center;color:rgba(255,255,255,.85);border:0;background:none;border-radius:50%;overflow:hidden;pointer-events:none}
+.lgx-ic .ms{font-size:20px}
+.lgx-eye{pointer-events:auto;cursor:pointer}.lgx-eye:hover{background:rgba(255,255,255,.12);color:#fff}
+.lgx-btn{margin-top:22px;height:46px;border:0;border-radius:999px;background:var(--gold);color:var(--navy-d);font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 10px 24px rgba(0,0,0,.25);transition:filter .15s,transform .1s}
+.lgx-btn:hover{filter:brightness(1.07)}.lgx-btn:active{transform:scale(.99)}
+.lgx-btn[disabled],.lgx-btn.off{opacity:.65;pointer-events:none}
+.lgx-lupa{justify-self:center;border:0;background:none;color:rgba(255,255,255,.9);font-size:13px;padding:4px 8px;border-radius:6px}
+.lgx-lupa:hover{text-decoration:underline;text-underline-offset:3px}
+.lgx-note{font-size:12.5px;line-height:1.5;color:rgba(255,255,255,.88);background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px 12px;text-align:left}
+.lgx-or{width:100%;display:flex;align-items:center;gap:12px;color:rgba(255,255,255,.6);font-size:12px;margin-top:4px}
+.lgx-or::before,.lgx-or::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.22)}
+.lgx-g{width:100%;min-height:44px;display:flex;justify-content:center}
+.lgx .banner{color:var(--text);text-align:left}
+.lgx-foot{display:flex;align-items:center;justify-content:space-between;gap:12px 20px;flex-wrap:wrap;padding:18px clamp(18px,4vw,44px);padding-bottom:calc(18px + env(safe-area-inset-bottom,0px));font-size:12.5px}
+.lgx-fl{display:flex;gap:6px 20px;flex-wrap:wrap}
+.lgx-fl a{color:rgba(255,255,255,.88);text-decoration:none;text-transform:uppercase;letter-spacing:.04em;font-size:12px}
+.lgx-fl a:hover{color:#fff;text-decoration:underline;text-underline-offset:3px}
+.lgx-fr{color:rgba(255,255,255,.8)}.lgx-fr b{color:var(--gold-on);font-weight:600}
+.lgx a:focus-visible,.lgx button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@media(max-width:720px){
+  .lgx-link{display:none}.lgx-pill{padding:9px 14px;font-size:11.5px;margin-left:2px}
+  .lgx-foot{flex-direction:column;justify-content:center;text-align:center}.lgx-fl{justify-content:center}
+}
+@media(max-width:380px){.lgx-brand small{display:none}}
+@media(prefers-reduced-motion:reduce){.lgx-box{animation:none}}
+.lgx .lgx-btn,.lgx .lgx-btn:hover{background:var(--gold);color:var(--navy-d)}.lgx .lgx-btn:hover{filter:brightness(1.07)}

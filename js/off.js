@@ -67,35 +67,39 @@
 
   function renderLogin() {
     var b = O.boot || {};
-    var sig = JSON.stringify([b.googleClientId, b.darurat, b.sandi, (b.cfg || {}).NAMA_INSTANSI]);
-    if (sig === O.loginSig && $('.lgn')) return;
+    var sig = JSON.stringify([b.googleClientId, b.darurat, b.sandi, (b.cfg || {}).NAMA_INSTANSI, (b.cfg || {}).FOOTER_TAUTAN]);
+    if (sig === O.loginSig && $('.lgx')) return;
     O.loginSig = sig;
     var inst = (b.cfg && b.cfg.NAMA_INSTANSI) || 'Pengadilan Tata Usaha Negara';
     var adaForm = b.darurat || b.sandi;
-    var form = adaForm ? '<form id="fdar" class="lgn-form" autocomplete="on">' +
-      '<label class="lgn-f"><span>Nama pengguna</span><input class="input" name="user" autocomplete="username" placeholder="Masukkan nama pengguna" required></label>' +
-      '<label class="lgn-f"><span>Sandi</span><span class="lgn-pw"><input class="input" type="password" name="pass" id="lgPass" autocomplete="current-password" placeholder="Masukkan sandi" required>' +
-      '<button type="button" class="lgn-eye" id="lgEye" aria-label="Tampilkan sandi" aria-pressed="false">' + ic('visibility') + '</button></span></label>' +
-      '<div class="lgn-row"><span class="lgn-muted">' + ic('shield_lock') + 'Sesi aman 12 jam</span><button type="button" class="lgn-link" id="lgLupa" aria-expanded="false">Lupa sandi?</button></div>' +
-      '<p class="lgn-note" id="lgNote" hidden>Hubungi Admin untuk mengatur ulang sandi Anda (menu Admin &rsaquo; Petugas &rsaquo; Ubah). Sandi akses darurat dibuat ulang oleh pemilik Apps Script lewat fungsi <b>resetAksesDarurat</b>.</p>' +
-      '<button class="lgn-btn">Masuk</button></form>' : '';
-    var google = b.googleClientId ? '<div id="gbtn" class="lgn-g"></div>' :
+    var form = adaForm ? '<form id="fdar" class="lgx-form" autocomplete="on">' +
+      '<label class="lgx-f"><span class="sr">Nama pengguna</span><input name="user" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Nama pengguna" required><span class="lgx-ic" aria-hidden="true">' + ic('account_circle', 'fill') + '</span></label>' +
+      '<label class="lgx-f"><span class="sr">Sandi</span><input type="password" name="pass" id="lgPass" autocomplete="current-password" placeholder="Sandi" required>' +
+      '<button type="button" class="lgx-ic lgx-eye" id="lgEye" aria-label="Tampilkan sandi" aria-pressed="false">' + ic('lock', 'fill') + '</button></label>' +
+      '<button class="lgn-btn lgx-btn">Masuk</button>' +
+      '<button type="button" class="lgx-lupa" id="lgLupa" aria-expanded="false">Lupa sandi?</button>' +
+      '<p class="lgx-note" id="lgNote" hidden>Hubungi Admin untuk mengatur ulang sandi Anda (Admin &rsaquo; Petugas &rsaquo; Ubah). Sandi akses darurat dibuat ulang oleh pemilik Apps Script lewat fungsi <b>resetAksesDarurat</b>.</p></form>' : '';
+    var google = b.googleClientId ? '<div id="gbtn" class="lgx-g"></div>' :
       (adaForm ? '' : '<div class="banner" style="margin:0">' + ic('info') + '<div class="small">Belum ada cara masuk yang aktif. Isi GOOGLE_CLIENT_ID atau jalankan resetAksesDarurat di Apps Script.</div></div>');
-    var pemisah = adaForm && b.googleClientId ? '<div class="lgn-or"><span>atau lanjutkan dengan</span></div>' : '';
-    APP.innerHTML = '<div class="lgn">' +
-      '<section class="lgn-hero">' + FASAD +
-        '<div class="lgn-top"><a class="lgn-brand" href="index.html"><span class="lgn-mark">' + ic('gavel', 'fill') + '</span><span>E-Kuasa<small>' + esc(inst) + '</small></span></a>' +
-        '<a class="lgn-back" href="index.html">' + ic('arrow_back') + '<span>Kembali ke Portal</span></a></div>' +
-        '<div class="lgn-copy in"><h2 id="lgH">' + esc(SLIDE[0][0]) + '</h2><p id="lgS">' + esc(SLIDE[0][1]) + '</p>' +
-        '<div class="lgn-dots" role="group" aria-label="Pilih slide">' + SLIDE.map(function (x, i) { return '<button type="button" data-i="' + i + '" class="' + (i ? '' : 'on') + '" aria-label="Slide ' + (i + 1) + '"></button>'; }).join('') + '</div></div>' +
-      '</section>' +
-      '<section class="lgn-side"><div class="lgn-card">' +
-        '<h1>Selamat Datang Kembali!</h1><p class="lgn-sub">Masuk untuk memverifikasi dan melegalisasi surat kuasa.</p>' +
+    var pemisah = adaForm && b.googleClientId ? '<div class="lgx-or"><span>atau</span></div>' : '';
+    var c = b.cfg || {};
+    var tautan = UI.tautanFooter(c.FOOTER_TAUTAN).slice(0, 3);
+    var bawahKiri = tautan.length ? tautan.map(function (t) { return '<a href="' + esc(t.u) + '" target="_blank" rel="noopener noreferrer">' + esc(t.l) + '</a>'; }).join('')
+      : '<a href="index.html">Portal Pemohon</a><a href="index.html#/status">Cek Status</a>';
+    APP.innerHTML = '<div class="lgx">' +
+      '<div class="lgx-bg" aria-hidden="true">' + FASAD + '</div>' +
+      '<header class="lgx-nav"><a class="lgx-brand" href="index.html"><span class="brand-mark"></span><span>E-Kuasa<small>' + esc(inst) + '</small></span></a>' +
+        '<nav><a class="lgx-link" href="index.html">Beranda</a><a class="lgx-link" href="index.html#/status">Cek Status</a>' +
+        '<button type="button" class="lgx-ikon" data-pasang aria-label="Pasang aplikasi di HP" title="Pasang aplikasi">' + ic('install_mobile') + '</button>' +
+        '<a class="lgx-pill" href="index.html#/daftar">Daftar Kuasa</a></nav></header>' +
+      '<main class="lgx-main"><div class="lgx-box">' +
+        '<span class="lgn-mark lgx-logo"></span>' +
+        '<h1>Masuk Petugas</h1><p class="lgx-sub">Verifikasi &amp; legalisasi surat kuasa</p>' +
         form + pemisah + google +
-        '<p class="lgn-foot">Bukan petugas? <a href="index.html">Kembali ke portal pemohon</a></p>' +
-      '</div></section></div>';
-    O.lgIdx = 0; clearInterval(O.lgTimer);
-    if (!window.matchMedia || !matchMedia('(prefers-reduced-motion: reduce)').matches) O.lgTimer = setInterval(function () { geserSlide(O.lgIdx + 1); }, 6000);
+      '</div></main>' +
+      '<footer class="lgx-foot"><div class="lgx-fl">' + bawahKiri + '</div><div class="lgx-fr">&copy; ' + new Date().getFullYear() + ', <b>' + esc(inst) + '</b></div></footer>' +
+      '</div>';
+    clearInterval(O.lgTimer);
     if (b.googleClientId) muatGoogle(b.googleClientId);
   }
   APP.addEventListener('click', function (e) {
@@ -104,7 +108,7 @@
     if (e.target.closest('#lgEye')) {
       var inp = $('#lgPass'), eye = $('#lgEye'), lihat = inp.type === 'password';
       inp.type = lihat ? 'text' : 'password'; eye.setAttribute('aria-pressed', lihat); eye.setAttribute('aria-label', lihat ? 'Sembunyikan sandi' : 'Tampilkan sandi');
-      eye.innerHTML = ic(lihat ? 'visibility_off' : 'visibility'); return;
+      eye.innerHTML = ic(lihat ? 'visibility' : 'lock', 'fill'); return;
     }
     if (e.target.closest('#lgLupa')) { var n = $('#lgNote'); n.hidden = !n.hidden; $('#lgLupa').setAttribute('aria-expanded', !n.hidden); }
   });
@@ -113,7 +117,7 @@
       if (!window.google || !google.accounts || !$('#gbtn')) return;
       google.accounts.id.initialize({ client_id: cid, callback: onGoogle, auto_select: false });
       var lebar = Math.max(220, Math.min(400, Math.floor($('#gbtn').getBoundingClientRect().width || 320)));
-      google.accounts.id.renderButton($('#gbtn'), { theme: 'outline', size: 'large', text: 'continue_with', shape: 'pill', width: lebar, logo_alignment: 'center', locale: 'id' });
+      google.accounts.id.renderButton($('#gbtn'), { theme: 'filled_black', size: 'large', text: 'continue_with', shape: 'pill', width: lebar, logo_alignment: 'center', locale: 'id' });
     };
     if (window.google && google.accounts) return init();
     if (document.getElementById('gsi')) return;
@@ -162,7 +166,7 @@
     var tab = m.map(function (x) { return '<a href="' + x[3] + '" data-r="' + x[0] + '">' + ic(x[1]) + (x[2] === 'Antrean Verifikasi' ? 'Antrean' : x[2]) + '</a>'; }).join('');
     APP.innerHTML = '<div class="shell"><aside class="side"><a class="brand" href="#/"><span class="brand-mark">' + ic('gavel', 'fill') + '</span><span class="brand-t"><b>E-Kuasa</b><span>Dashboard Petugas</span></span></a><nav>' + nav + '</nav>' +
       '<div class="me"><span class="ico" style="background:var(--navy)">' + ic('person') + '</span><div class="grow"><b>' + esc(O.user.nama || 'Petugas') + '</b><span>' + esc(O.user.peran) + ' &middot; ' + esc(O.user.email) + '</span></div>' + (O.user.username ? '<button data-act="gantiSandi" title="Ganti sandi" aria-label="Ganti sandi">' + ic('key') + '</button>' : '') + '<button data-act="keluar" title="Keluar" aria-label="Keluar">' + ic('logout') + '</button></div></aside>' +
-      '<div class="main"><header class="bar-top"><div class="row"><span class="brand-mark mob-only">' + ic('gavel', 'fill') + '</span><b id="judul" style="color:var(--navy)"></b></div><div class="row"><span id="sync" class="tiny muted"></span><button class="btn btn-t btn-s" data-act="muat" aria-label="Muat ulang data">' + ic('refresh') + '</button>' + (O.user.username ? '<button class="btn btn-t btn-s mob-only" data-act="gantiSandi" aria-label="Ganti sandi">' + ic('key') + '</button>' : '') + '<button class="btn btn-t btn-s mob-only" data-act="keluar" aria-label="Keluar">' + ic('logout') + '</button></div></header>' +
+      '<div class="main"><header class="bar-top"><div class="row"><span class="brand-mark mob-only">' + ic('gavel', 'fill') + '</span><b id="judul" style="color:var(--navy)"></b></div><div class="row"><span id="sync" class="tiny muted"></span><button class="btn btn-t btn-s" data-pasang aria-label="Pasang aplikasi" title="Pasang aplikasi">' + ic('install_mobile') + '</button><button class="btn btn-t btn-s" data-act="muat" aria-label="Muat ulang data">' + ic('refresh') + '</button>' + (O.user.username ? '<button class="btn btn-t btn-s mob-only" data-act="gantiSandi" aria-label="Ganti sandi">' + ic('key') + '</button>' : '') + '<button class="btn btn-t btn-s mob-only" data-act="keluar" aria-label="Keluar">' + ic('logout') + '</button></div></header>' +
       '<div class="content" id="v"></div></div><nav class="tabbar off-tab">' + tab + '</nav></div>';
     $('.shell').addEventListener('click', klik);
     $('#v').addEventListener('input', onInput);
@@ -172,8 +176,15 @@
     muatList();
     tampil();
     clearInterval(O.timer);
-    O.timer = setInterval(function () { if (document.visibilityState === 'visible' && O.user && /^(ringkasan|antrean|laporan)$/.test(O.route)) muatList(); }, 30000);
+    // Polling adaptif: 30 detik saat petugas aktif, 90 detik bila diam >2 menit, berhenti saat tab tersembunyi
+    O.aktifAt = Date.now();
+    O.timer = setInterval(function () {
+      if (document.visibilityState !== 'visible' || !O.user || !/^(ringkasan|antrean|laporan)$/.test(O.route)) return;
+      var diam = Date.now() - O.aktifAt > 120000, jeda = diam ? 90000 : 30000;
+      if (Date.now() - O.lastSync >= jeda - 1000) muatList();
+    }, 15000);
   }
+  ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(function (ev) { window.addEventListener(ev, function () { O.aktifAt = Date.now(); }, { passive: true, capture: true }); });
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && O.user && Date.now() - O.lastSync > 15000) muatList(); });
 
   // ---------- Data daftar: cache sesi -> segarkan hanya bila versi berubah ----------

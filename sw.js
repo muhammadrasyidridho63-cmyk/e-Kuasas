@@ -2,7 +2,7 @@
 // - Berkas tampilan (HTML/CSS/JS/ikon) disajikan dari cache SEKETIKA lalu diperbarui di latar (stale-while-revalidate).
 // - Permintaan ke Google Apps Script / login Google TIDAK pernah disentuh (selalu langsung ke server).
 // - Naikkan VERSI setiap rilis agar pengguna mendapat tawaran "Versi baru tersedia".
-const VERSI = '2026.11.24-1';
+const VERSI = '2026.11.25-1';
 const CACHE = 'ekuasa-' + VERSI;
 const CACHE_FONT = 'ekuasa-font-v1';
 const INTI = [
