@@ -53,11 +53,67 @@
   };
   var IKON = { gavel: 'Palu hakim', balance: 'Timbangan', account_balance: 'Gedung', policy: 'Dokumen hukum', verified_user: 'Terverifikasi', workspace_premium: 'Lencana', local_police: 'Lambang', shield: 'Perisai' };
   var LOGO = { b: 'lencana', i: 'gavel', g: '' };
+
+  // ---------- Rapikan logo gambar: buang tepi kosong, tengahkan di kanvas persegi ----------
+  // Hasil disimpan di memori + localStorage (per sidik gambar) agar hanya diproses sekali.
+  var RAPI = {};
+  function sidik(g) { return g.length + ':' + g.slice(-40); }
+  function rapikanGambar(src, ukuran) {
+    ukuran = ukuran || 256;
+    return new Promise(function (res) {
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var w = img.naturalWidth, h = img.naturalHeight;
+          var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+          var cx = cv.getContext('2d'); cx.drawImage(img, 0, 0);
+          var d = cx.getImageData(0, 0, w, h).data;
+          // latar dianggap kosong bila transparan, atau putih polos bila keempat sudut putih
+          var px = function (x, y) { var i = (y * w + x) * 4; return [d[i], d[i + 1], d[i + 2], d[i + 3]]; };
+          var putih = function (p) { return p[3] > 200 && p[0] > 242 && p[1] > 242 && p[2] > 242; };
+          var sudutPutih = [px(0, 0), px(w - 1, 0), px(0, h - 1), px(w - 1, h - 1)].every(putih);
+          var kosong = function (i) { return d[i + 3] < 16 || (sudutPutih && d[i] > 242 && d[i + 1] > 242 && d[i + 2] > 242); };
+          var x0 = w, y0 = h, x1 = -1, y1 = -1;
+          for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+            if (!kosong((y * w + x) * 4)) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+          }
+          if (x1 < 0) { res(src); return; }
+          var bw = x1 - x0 + 1, bh = y1 - y0 + 1, sisi = Math.max(bw, bh);
+          var out = document.createElement('canvas'); out.width = out.height = ukuran;
+          var ox = out.getContext('2d'); ox.imageSmoothingQuality = 'high';
+          if (sudutPutih) { ox.fillStyle = '#fff'; ox.fillRect(0, 0, ukuran, ukuran); }
+          var pad = Math.round(ukuran * 0.04), isi = ukuran - pad * 2, s = isi / sisi;
+          var dw = bw * s, dh = bh * s;
+          ox.drawImage(img, x0, y0, bw, bh, (ukuran - dw) / 2, (ukuran - dh) / 2, dw, dh);
+          var hasil = out.toDataURL('image/png');
+          [0.92, 0.85, 0.7].forEach(function (q) { if (hasil.length > 58000) { var wbp = out.toDataURL('image/webp', q); if (/^data:image\/webp/.test(wbp)) hasil = wbp; } });
+          res(hasil.length > 58000 ? src : hasil);
+        } catch (e) { res(src); }
+      };
+      img.onerror = function () { res(src); };
+      img.src = src;
+    });
+  }
+  function versiRapi(g) {
+    if (!g) return '';
+    var k = sidik(g);
+    if (RAPI[k]) return RAPI[k];
+    try { var s = JSON.parse(localStorage.getItem('ek_logo_rapi') || 'null'); if (s && s.k === k) { RAPI[k] = s.g; return s.g; } } catch (e) { /* abaikan */ }
+    if (!RAPI['_p' + k]) {
+      RAPI['_p' + k] = 1;
+      rapikanGambar(g).then(function (r) {
+        RAPI[k] = r;
+        try { localStorage.setItem('ek_logo_rapi', JSON.stringify({ k: k, g: r })); } catch (e) { /* abaikan */ }
+        if (LOGO.g === g) { LOGO.tampil = r; document.querySelectorAll('.brand-mark,.lgn-mark').forEach(function (el) { el.removeAttribute('data-sig'); }); tempelLogo(); }
+      });
+    }
+    return g;
+  }
   function isiLogo() {
-    return LOGO.g ? '<img src="' + LOGO.g + '" alt="" draggable="false">' : '<span class="ms fill" aria-hidden="true">' + (IKON[LOGO.i] ? LOGO.i : 'gavel') + '</span>';
+    return LOGO.g ? '<img src="' + (LOGO.tampil || LOGO.g) + '" alt="" draggable="false">' : '<span class="ms fill" aria-hidden="true">' + (IKON[LOGO.i] ? LOGO.i : 'gavel') + '</span>';
   }
   function tempelLogo(root) {
-    var sig = LOGO.b + '|' + LOGO.i + '|' + LOGO.g.length + LOGO.g.slice(-24);
+    var sig = LOGO.b + '|' + LOGO.i + '|' + LOGO.g.length + LOGO.g.slice(-24) + '|' + (LOGO.tampil ? LOGO.tampil.length : 0);
     (root || document).querySelectorAll('.brand-mark:not([data-contoh]),.lgn-mark').forEach(function (el) {
       if (el.getAttribute('data-sig') === sig) return;
       el.setAttribute('data-sig', sig); el.setAttribute('data-bentuk', LOGO.b);
@@ -67,6 +123,7 @@
   }
   function pasangLogo(bentuk, ikon, gambar) {
     LOGO = { b: BENTUK[bentuk] ? bentuk : 'lencana', i: IKON[ikon] ? ikon : 'gavel', g: /^data:image\/(png|jpeg|webp);base64,/.test(gambar || '') ? gambar : '' };
+    LOGO.tampil = LOGO.g ? versiRapi(LOGO.g) : '';
     document.documentElement.setAttribute('data-logo', LOGO.b);
     if (document.body) tempelLogo();
     // ikon tab browser ikut memakai logo unggahan
@@ -93,7 +150,7 @@
   }
 
   window.Tema = { daftar: TEMA, pasang: pasang, dariCfg: dariCfg, turunan: turunan, valid: function (h) { return !!hex(h); },
-    bentuk: BENTUK, ikon: IKON, pasangLogo: pasangLogo, logo: function () { return { b: LOGO.b, i: LOGO.i, g: LOGO.g }; } };
+    bentuk: BENTUK, ikon: IKON, pasangLogo: pasangLogo, rapikanGambar: rapikanGambar, logo: function () { return { b: LOGO.b, i: LOGO.i, g: LOGO.g }; } };
 
   try { var s = JSON.parse(localStorage.getItem('ek_tema') || 'null'); if (s) { pasang(s.k, s.p, s.a); pasangLogo(s.lb, s.li, s.lg || ''); } else pasangLogo('lencana', 'gavel', ''); } catch (e) { pasangLogo('lencana', 'gavel', ''); }
 })();

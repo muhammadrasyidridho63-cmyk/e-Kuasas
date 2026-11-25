@@ -319,7 +319,7 @@
     else if (t.id === 'lgDari' || t.id === 'lgSampai' || t.id === 'lgKel') { O.lg = O.lg || {}; O.lg[t.id] = t.value; renderLaporan(); }
     else if (t.matches && t.matches('input[data-logo-file]')) {
       var fl = t.files[0]; t.value = ''; if (!fl) return;
-      kecilkanLogo(fl).then(function (g) { O.logoPilih.g = g; pratinjauLogo(); UI.toast('Gambar siap. Klik Simpan Logo untuk menerapkan.', ''); })
+      kecilkanLogo(fl).then(function (g) { return Tema.rapikanGambar(g, 256); }).then(function (g) { O.logoPilih.g = g; pratinjauLogo(); UI.toast('Gambar siap. Klik Simpan Logo untuk menerapkan.', ''); })
         .catch(function (err) { UI.toast(err.message, 'err'); });
     }
     else if (t.matches && t.matches('input[data-legal]')) uploadLegal(t);
@@ -612,13 +612,12 @@
       if (file.size > 8 * 1024 * 1024) return rej(new Error('Gambar terlalu besar (maks 8 MB).'));
       var url = URL.createObjectURL(file), img = new Image();
       img.onload = function () {
-        var s = Math.min(1, 192 / Math.max(img.width, img.height)), w = Math.max(1, Math.round(img.width * s)), h = Math.max(1, Math.round(img.height * s));
+        var s = Math.min(1, 512 / Math.max(img.width, img.height)), w = Math.max(1, Math.round(img.width * s)), h = Math.max(1, Math.round(img.height * s));
         var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
         var cx = cv.getContext('2d'); cx.imageSmoothingQuality = 'high'; cx.drawImage(img, 0, 0, w, h); URL.revokeObjectURL(url);
         var hasil = cv.toDataURL('image/png');
         [0.9, 0.8, 0.65].forEach(function (q) { if (hasil.length > 58000) { var wbp = cv.toDataURL('image/webp', q); if (/^data:image\/webp/.test(wbp)) hasil = wbp; } });
-        if (hasil.length > 58000) return rej(new Error('Gambar terlalu rumit untuk dijadikan logo. Coba gambar yang lebih sederhana.'));
-        res(hasil);
+        res(hasil);   // ukuran akhir diatur oleh Tema.rapikanGambar (256 px, ≤ 58.000 karakter)
       };
       img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('Gambar tidak bisa dibaca.')); };
       img.src = url;
